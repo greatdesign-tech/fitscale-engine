@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Sparkles, QrCode, Bell, Sliders, ArrowLeft, ExternalLink } from 'lucide-react';
+import { Sparkles, QrCode, Bell, ArrowLeft, ExternalLink } from 'lucide-react';
 import { GymConfig } from '@/types';
 
 interface AgencyHeaderProps {
@@ -65,15 +65,6 @@ export const AgencyHeader: React.FC<AgencyHeaderProps> = ({
             <QrCode className="w-3.5 h-3.5 text-emerald-400" />
             <span className="hidden md:inline">Scan on Real Phone</span>
           </button>
-
-          {/* Edit in Builder */}
-          <Link
-            href={`/admin/builder?edit=${config.slug}`}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 text-xs font-semibold border border-emerald-500/30 transition"
-          >
-            <Sliders className="w-3.5 h-3.5" />
-            <span>Customize Demo</span>
-          </Link>
         </div>
       </div>
     </header>

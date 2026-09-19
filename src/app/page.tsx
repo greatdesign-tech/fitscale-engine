@@ -180,7 +180,7 @@ export default function HomePage() {
             </h2>
           </div>
           <p className="text-xs text-slate-400 max-w-md">
-            Click any concept to open the live prospect view, or edit colors, trainers, and schedules in real time.
+            Click any concept to explore the live, interactive prospect experience.
           </p>
         </div>
 
@@ -235,22 +235,14 @@ export default function HomePage() {
                 </div>
               </div>
 
-              <div className="mt-5 pt-3 flex items-center gap-2">
+              <div className="mt-5 pt-3">
                 <Link
                   href={`/demo/${gym.slug}`}
-                  className="flex-1 py-2 px-3 rounded-xl text-xs font-bold text-slate-950 text-center transition hover:brightness-110 flex items-center justify-center gap-1"
+                  className="w-full py-2.5 px-3 rounded-xl text-xs font-bold text-slate-950 text-center transition hover:brightness-110 flex items-center justify-center gap-1.5 shadow-md"
                   style={{ backgroundColor: gym.primaryColor }}
                 >
-                  <span>Open Demo</span>
-                  <ExternalLink className="w-3 h-3" />
-                </Link>
-
-                <Link
-                  href={`/admin/builder?edit=${gym.slug}`}
-                  className="py-2 px-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-medium border border-white/10 transition"
-                  title="Customize in builder"
-                >
-                  Edit
+                  <span>Open Interactive Demo</span>
+                  <ExternalLink className="w-3.5 h-3.5" />
                 </Link>
               </div>
             </div>
