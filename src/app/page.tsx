@@ -4,18 +4,11 @@ import { PRESET_DEMOS } from '@/lib/defaultDemos';
 import {
   Sparkles,
   Smartphone,
-  Zap,
   ArrowRight,
-  TrendingUp,
-  Bell,
   Calendar,
+  Bell,
   Award,
-  CheckCircle2,
   ExternalLink,
-  Users,
-  FileSpreadsheet,
-  Target,
-  ShieldCheck,
 } from 'lucide-react';
 
 export default function HomePage() {
@@ -41,19 +34,11 @@ export default function HomePage() {
 
         <div className="flex items-center gap-2.5">
           <Link
-            href="/admin/leads"
-            className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition flex items-center gap-1.5"
+            href="/demo/apex-fitness"
+            className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold transition shadow-md flex items-center gap-1.5"
           >
-            <Users className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Lead Finder</span>
-          </Link>
-
-          <Link
-            href="/admin/builder"
-            className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-black transition shadow-md flex items-center gap-1.5"
-          >
-            <span>Demo Builder</span>
-            <ArrowRight className="w-3.5 h-3.5" />
+            <Smartphone className="w-3.5 h-3.5" />
+            <span>Try Live Demo</span>
           </Link>
         </div>
       </nav>
@@ -83,21 +68,20 @@ export default function HomePage() {
         {/* Action Buttons */}
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3.5">
           <Link
-            href="/admin/leads"
+            href="/demo/apex-fitness"
             className="px-7 py-3.5 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-sm flex items-center gap-2 transition shadow-xl hover:shadow-emerald-500/25 active:scale-98"
           >
-            <Users className="w-4 h-4" />
-            <span>Open Lead Finder (/admin/leads)</span>
+            <Smartphone className="w-4 h-4 fill-slate-950" />
+            <span>Launch Live Mobile Demo</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
 
-          <Link
-            href="/admin/builder"
+          <a
+            href="#demos"
             className="px-6 py-3.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm border border-white/10 flex items-center gap-2 transition"
           >
-            <Smartphone className="w-4 h-4 text-emerald-400" />
-            <span>Open Demo Builder (/admin/builder)</span>
-          </Link>
+            <span>Explore All Gym Concepts</span>
+          </a>
         </div>
 
         {/* Agency Metrics Banner */}
@@ -169,7 +153,7 @@ export default function HomePage() {
       </section>
 
       {/* Pre-built Gym Concepts */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-12 w-full">
+      <section id="demos" className="max-w-7xl mx-auto px-4 sm:px-6 py-12 w-full scroll-mt-6">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 gap-3">
           <div>
             <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider">
@@ -255,14 +239,14 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
           <span>FitScale Engine © 2026. Merged GymLead Finder + FitApp Demo Platform.</span>
           <div className="flex items-center gap-4 text-slate-400">
-            <Link href="/admin/leads" className="hover:text-white transition">
-              Lead Finder
-            </Link>
-            <Link href="/admin/builder" className="hover:text-white transition">
-              Demo Builder
-            </Link>
             <Link href="/demo/apex-fitness" className="hover:text-white transition">
               Apex Concept
+            </Link>
+            <Link href="/demo/ironforge-crossfit" className="hover:text-white transition">
+              CrossFit Concept
+            </Link>
+            <Link href="/demo/zenith-pilates" className="hover:text-white transition">
+              Pilates Concept
             </Link>
           </div>
         </div>

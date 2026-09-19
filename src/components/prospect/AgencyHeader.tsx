@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Sparkles, QrCode, Bell, ArrowLeft, ExternalLink } from 'lucide-react';
+import { Sparkles, QrCode, Bell, ExternalLink } from 'lucide-react';
 import { GymConfig } from '@/types';
 
 interface AgencyHeaderProps {
@@ -21,15 +21,6 @@ export const AgencyHeader: React.FC<AgencyHeaderProps> = ({
       <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
         {/* Left: Agency branding & Prospect Title */}
         <div className="flex items-center gap-3">
-          <Link
-            href="/admin/leads"
-            className="flex items-center gap-2 px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold transition"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>FitScale Leads</span>
-          </Link>
-
-          <div className="h-4 w-px bg-white/15 hidden sm:block" />
 
           <div>
             <div className="flex items-center gap-2">
