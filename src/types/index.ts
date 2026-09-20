@@ -37,7 +37,7 @@ export interface GymClass {
   instructor: string;
   instructorAvatar?: string;
   room: string;
-  category: 'HIIT' | 'Strength' | 'Yoga' | 'Spin' | 'CrossFit' | 'Boxing' | 'Pilates';
+  category: string; // Dynamic category (e.g. HIIT, Strength, WOD, Reformer, Flow, etc.)
   spotsLeft: number;
   totalSpots: number;
   day: string;
@@ -72,6 +72,36 @@ export interface AgencySettings {
   repPhone: string;
 }
 
+export interface HomeSectionConfig {
+  greeting: string;
+  memberBadge: string;
+  membershipCardTitle: string;
+  quickAction1Label?: string;
+  quickAction2Label?: string;
+  quickAction3Label?: string;
+  featuredClassBadge?: string;
+}
+
+export interface ScheduleSectionConfig {
+  title: string;
+  subtitle: string;
+  categories: string[];
+  confirmationToast?: string;
+}
+
+export interface TrainersSectionConfig {
+  title: string;
+  subtitle: string;
+}
+
+export interface RewardsSectionConfig {
+  title: string;
+  subtitle: string;
+  tierBadge: string;
+  monthlyGoal: number;
+  startingStreak?: number;
+}
+
 export interface GymConfig {
   id: string;
   slug: string;
@@ -91,6 +121,11 @@ export interface GymConfig {
   agencySettings: AgencySettings;
   customPushMessage?: string;
   attachedLeadId?: string;
+  // Deep section-specific configurations
+  homeConfig?: HomeSectionConfig;
+  scheduleConfig?: ScheduleSectionConfig;
+  trainersConfig?: TrainersSectionConfig;
+  rewardsConfig?: RewardsSectionConfig;
 }
 
 export type ActivePhoneTab = 'home' | 'schedule' | 'trainers' | 'rewards';

@@ -39,7 +39,14 @@ export const TabSchedule: React.FC<TabScheduleProps> = ({
   const [selectedDay, setSelectedDay] = useState('Mon');
   const [selectedCategory, setSelectedCategory] = useState('All');
 
-  const categories = ['All', 'HIIT', 'Strength', 'Yoga', 'CrossFit', 'Boxing', 'Spin', 'Pilates'];
+  const rawCategories =
+    config.scheduleConfig?.categories && config.scheduleConfig.categories.length > 0
+      ? config.scheduleConfig.categories
+      : ['All', 'HIIT', 'Strength', 'Yoga', 'CrossFit', 'Boxing', 'Spin', 'Pilates'];
+  // Ensure 'All' is present as the first filter option
+  const categories = rawCategories.includes('All')
+    ? ['All', ...rawCategories.filter((c) => c !== 'All')]
+    : ['All', ...rawCategories];
 
   // Filter classes by day and category
   const filteredClasses = classes.filter((c) => {
@@ -54,8 +61,12 @@ export const TabSchedule: React.FC<TabScheduleProps> = ({
       {/* Title */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-base font-bold text-white">Live Class Schedule</h2>
-          <p className="text-[11px] text-slate-400">Book your workout slot in real time</p>
+          <h2 className="text-base font-bold text-white">
+            {config.scheduleConfig?.title || 'Live Class Schedule'}
+          </h2>
+          <p className="text-[11px] text-slate-400">
+            {config.scheduleConfig?.subtitle || 'Book your workout slot in real time'}
+          </p>
         </div>
         <span
           className="text-[10px] font-bold px-2 py-0.5 rounded-full"

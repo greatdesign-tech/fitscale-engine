@@ -20,8 +20,12 @@ export const TabTrainers: React.FC<TabTrainersProps> = ({
     <div className="space-y-3.5 pb-16">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-base font-bold text-white">Coaches & Trainers</h2>
-          <p className="text-[11px] text-slate-400">1-on-1 private coaching & assessments</p>
+          <h2 className="text-base font-bold text-white">
+            {config.trainersConfig?.title || 'Coaches & Trainers'}
+          </h2>
+          <p className="text-[11px] text-slate-400">
+            {config.trainersConfig?.subtitle || '1-on-1 private coaching & assessments'}
+          </p>
         </div>
         <span
           className="text-[10px] font-bold px-2 py-0.5 rounded-full"

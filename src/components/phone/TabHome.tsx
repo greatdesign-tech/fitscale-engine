@@ -48,7 +48,7 @@ export const TabHome: React.FC<TabHomeProps> = ({
               {config.location}
             </div>
             <h2 className="text-sm font-bold text-slate-100 flex items-center gap-1.5">
-              Welcome back, Alex!
+              {config.homeConfig?.greeting || 'Welcome back, Alex!'}
             </h2>
           </div>
         </div>
@@ -58,7 +58,7 @@ export const TabHome: React.FC<TabHomeProps> = ({
             className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide text-slate-950 shadow-sm"
             style={{ backgroundColor: config.primaryColor }}
           >
-            VIP Member
+            {config.homeConfig?.memberBadge || 'VIP Member'}
           </span>
           <span className="text-[10px] text-slate-400 mt-0.5 font-mono">
             {config.industryType}
@@ -78,7 +78,9 @@ export const TabHome: React.FC<TabHomeProps> = ({
           >
             <Calendar className="w-4 h-4" />
           </div>
-          <span className="text-[11px] font-bold text-slate-200">Book Class</span>
+          <span className="text-[11px] font-bold text-slate-200">
+            {config.homeConfig?.quickAction1Label || 'Book Class'}
+          </span>
           <span className="text-[9px] text-slate-400">Live Schedule</span>
         </button>
 
@@ -89,7 +91,9 @@ export const TabHome: React.FC<TabHomeProps> = ({
           <div className="w-9 h-9 rounded-xl bg-slate-700/80 text-white flex items-center justify-center mb-1.5 shadow-sm group-hover:scale-105 transition">
             <QrCode className="w-4 h-4 text-emerald-400" />
           </div>
-          <span className="text-[11px] font-bold text-slate-200">Scan Pass</span>
+          <span className="text-[11px] font-bold text-slate-200">
+            {config.homeConfig?.quickAction2Label || 'Scan Pass'}
+          </span>
           <span className="text-[9px] text-slate-400">Turnstile Entry</span>
         </button>
 
@@ -100,7 +104,9 @@ export const TabHome: React.FC<TabHomeProps> = ({
           <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center mb-1.5 shadow-sm group-hover:scale-105 transition">
             <Flame className="w-4 h-4 fill-amber-400 text-amber-400" />
           </div>
-          <span className="text-[11px] font-bold text-slate-200">Streak</span>
+          <span className="text-[11px] font-bold text-slate-200">
+            {config.homeConfig?.quickAction3Label || 'Streak'}
+          </span>
           <span className="text-[9px] text-amber-400 font-bold">{workoutStreak} Days 🔥</span>
         </button>
       </div>
@@ -115,7 +121,8 @@ export const TabHome: React.FC<TabHomeProps> = ({
 
           <div className="flex items-center justify-between mb-2">
             <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 flex items-center gap-1">
-              <Sparkles className="w-3 h-3 text-amber-400" /> Up Next Today
+              <Sparkles className="w-3 h-3 text-amber-400" />{' '}
+              {config.homeConfig?.featuredClassBadge || 'Up Next Today'}
             </span>
             <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 font-bold animate-pulse">
               Only {featuredClass.spotsLeft} Spots Left
@@ -170,7 +177,7 @@ export const TabHome: React.FC<TabHomeProps> = ({
           </div>
           <div>
             <div className="text-xs font-bold text-white flex items-center gap-1.5">
-              Monthly Attendance
+              {config.homeConfig?.membershipCardTitle || 'Monthly Attendance'}
               <span className="text-[10px] text-emerald-400 font-normal">On Track</span>
             </div>
             <div className="text-[11px] text-slate-400">

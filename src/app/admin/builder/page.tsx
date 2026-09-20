@@ -6,11 +6,21 @@ import { useSearchParams } from 'next/navigation';
 import { PRESET_DEMOS } from '@/lib/defaultDemos';
 import { saveDemo, getDemoBySlug } from '@/lib/store';
 import { attachDemoToLead, getLeadById } from '@/lib/leadStore';
-import { GymConfig, Trainer, GymClass, GymLead } from '@/types';
+import {
+  GymConfig,
+  Trainer,
+  GymClass,
+  RewardTier,
+  GymLead,
+  HomeSectionConfig,
+  ScheduleSectionConfig,
+  TrainersSectionConfig,
+  RewardsSectionConfig,
+  ActivePhoneTab,
+} from '@/types';
 import { PhoneFrame } from '@/components/phone/PhoneFrame';
 import { ShareModal } from '@/components/admin/ShareModal';
 import {
-  Sparkles,
   Sliders,
   Palette,
   Users,
@@ -20,17 +30,18 @@ import {
   ExternalLink,
   Plus,
   Trash2,
-  Smartphone,
   Eye,
-  RefreshCw,
   Bell,
-  ArrowRight,
   Home,
-  Check,
-  Link as LinkIcon,
-  ShieldCheck,
+  Gift,
+  Award,
   CheckCircle2,
   ArrowLeft,
+  Flame,
+  Sparkles,
+  Tag,
+  Dumbbell,
+  Check,
 } from 'lucide-react';
 
 const PRESET_COLOR_SWATCHES = [
@@ -42,6 +53,52 @@ const PRESET_COLOR_SWATCHES = [
   { name: 'Luxury Gold', hex: '#EAB308' },
   { name: 'Pure Red', hex: '#EF4444' },
 ];
+
+type BuilderTab = 'brand' | 'home' | 'schedule' | 'trainers' | 'rewards' | 'settings';
+
+const phoneTabMapping: Record<BuilderTab, ActivePhoneTab> = {
+  brand: 'home',
+  home: 'home',
+  schedule: 'schedule',
+  trainers: 'trainers',
+  rewards: 'rewards',
+  settings: 'home',
+};
+
+const ensureConfigs = (cfg: GymConfig): GymConfig => ({
+  ...cfg,
+  homeConfig: {
+    greeting: cfg.homeConfig?.greeting ?? 'Welcome back, Alex!',
+    memberBadge: cfg.homeConfig?.memberBadge ?? 'VIP Member',
+    membershipCardTitle: cfg.homeConfig?.membershipCardTitle ?? 'Monthly Attendance',
+    quickAction1Label: cfg.homeConfig?.quickAction1Label ?? 'Book Class',
+    quickAction2Label: cfg.homeConfig?.quickAction2Label ?? 'Scan Pass',
+    quickAction3Label: cfg.homeConfig?.quickAction3Label ?? 'Streak',
+    featuredClassBadge: cfg.homeConfig?.featuredClassBadge ?? 'Up Next Today',
+  },
+  scheduleConfig: {
+    title: cfg.scheduleConfig?.title ?? 'Live Class Schedule',
+    subtitle: cfg.scheduleConfig?.subtitle ?? 'Book your workout slot in real time',
+    categories:
+      cfg.scheduleConfig?.categories && cfg.scheduleConfig.categories.length > 0
+        ? cfg.scheduleConfig.categories
+        : ['All', 'HIIT', 'Strength', 'Yoga', 'CrossFit', 'Boxing'],
+    confirmationToast:
+      cfg.scheduleConfig?.confirmationToast ?? "You're booked! Added to Apple Calendar ✓",
+  },
+  trainersConfig: {
+    title: cfg.trainersConfig?.title ?? 'Coaches & Trainers',
+    subtitle: cfg.trainersConfig?.subtitle ?? '1-on-1 private coaching & assessments',
+  },
+  rewardsConfig: {
+    title: cfg.rewardsConfig?.title ?? 'Member Rewards',
+    subtitle: cfg.rewardsConfig?.subtitle ?? 'Punch card, streaks & member perks',
+    tierBadge: cfg.rewardsConfig?.tierBadge ?? 'Tier 2 Athlete',
+    monthlyGoal: cfg.rewardsConfig?.monthlyGoal ?? 20,
+    startingStreak: cfg.rewardsConfig?.startingStreak ?? 14,
+  },
+  rewards: cfg.rewards ?? [],
+});
 
 function DemoBuilderContent() {
   const searchParams = useSearchParams();
@@ -55,17 +112,19 @@ function DemoBuilderContent() {
   // Active gym configuration state
   const [config, setConfig] = useState<GymConfig>(() => {
     if (editSlug && PRESET_DEMOS[editSlug]) {
-      return { ...PRESET_DEMOS[editSlug] };
+      return ensureConfigs(PRESET_DEMOS[editSlug]);
     }
-    return { ...PRESET_DEMOS['apex-fitness'] };
+    return ensureConfigs(PRESET_DEMOS['apex-fitness']);
   });
 
+  const [activeBuilderTab, setActiveBuilderTab] = useState<BuilderTab>('brand');
   const [activePresetKey, setActivePresetKey] = useState<string>('apex-fitness');
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [attachToLead, setAttachToLead] = useState<boolean>(!!leadId);
   const [attachedLead, setAttachedLead] = useState<GymLead | null>(null);
   const [mobileViewMode, setMobileViewMode] = useState<'editor' | 'preview'>('editor');
   const [justAttachedSuccess, setJustAttachedSuccess] = useState(false);
+  const [newCategoryInput, setNewCategoryInput] = useState('');
 
   // Auto-fill from Lead Query Parameters (⚡ Create Demo App)
   useEffect(() => {
@@ -90,20 +149,22 @@ function DemoBuilderContent() {
           .join('')
           .toUpperCase();
 
-        setConfig((prev) => ({
-          ...prev,
-          name: paramName,
-          slug: cleanSlug || 'custom-gym-demo',
-          location: paramCity || prev.location,
-          logoMonogram: monogram || prev.logoMonogram,
-          attachedLeadId: leadId,
-          customPushMessage: `🔥 ${paramName} Reminder: 2 spots left for tonight's workout! Tap to reserve.`,
-        }));
+        setConfig((prev) =>
+          ensureConfigs({
+            ...prev,
+            name: paramName,
+            slug: cleanSlug || 'custom-gym-demo',
+            location: paramCity || prev.location,
+            logoMonogram: monogram || prev.logoMonogram,
+            attachedLeadId: leadId,
+            customPushMessage: `🔥 ${paramName} Reminder: 2 spots left for tonight's workout! Tap to reserve.`,
+          })
+        );
       }
     } else if (editSlug) {
       const existing = getDemoBySlug(editSlug);
       if (existing) {
-        setConfig({ ...existing });
+        setConfig(ensureConfigs(existing));
         setActivePresetKey(editSlug);
       }
     }
@@ -112,10 +173,9 @@ function DemoBuilderContent() {
   // Handle 1-click Preset switch
   const handleLoadPreset = (key: string) => {
     if (PRESET_DEMOS[key]) {
-      const preset = PRESET_DEMOS[key];
+      const preset = ensureConfigs(PRESET_DEMOS[key]);
       setConfig((prev) => ({
         ...preset,
-        // Preserve lead info if attached
         name: leadId && paramName ? paramName : preset.name,
         slug: leadId && paramName ? prev.slug : preset.slug,
         location: leadId && paramCity ? paramCity : preset.location,
@@ -146,6 +206,153 @@ function DemoBuilderContent() {
     }));
   };
 
+  // Section configs mutation helpers
+  const handleUpdateHomeConfig = (field: keyof HomeSectionConfig, value: string) => {
+    setConfig((prev) => ({
+      ...prev,
+      homeConfig: {
+        ...(prev.homeConfig as HomeSectionConfig),
+        [field]: value,
+      },
+    }));
+  };
+
+  const handleUpdateScheduleConfig = (field: keyof ScheduleSectionConfig, value: any) => {
+    setConfig((prev) => ({
+      ...prev,
+      scheduleConfig: {
+        ...(prev.scheduleConfig as ScheduleSectionConfig),
+        [field]: value,
+      },
+    }));
+  };
+
+  const handleAddCategory = () => {
+    const trimmed = newCategoryInput.trim();
+    if (!trimmed) return;
+    const currentCats = config.scheduleConfig?.categories || [];
+    if (!currentCats.includes(trimmed)) {
+      handleUpdateScheduleConfig('categories', [...currentCats, trimmed]);
+    }
+    setNewCategoryInput('');
+  };
+
+  const handleRemoveCategory = (catToRemove: string) => {
+    if (catToRemove === 'All') return;
+    const currentCats = config.scheduleConfig?.categories || [];
+    handleUpdateScheduleConfig(
+      'categories',
+      currentCats.filter((c) => c !== catToRemove)
+    );
+  };
+
+  const handleUpdateTrainersConfig = (field: keyof TrainersSectionConfig, value: string) => {
+    setConfig((prev) => ({
+      ...prev,
+      trainersConfig: {
+        ...(prev.trainersConfig as TrainersSectionConfig),
+        [field]: value,
+      },
+    }));
+  };
+
+  const handleUpdateRewardsConfig = (field: keyof RewardsSectionConfig, value: any) => {
+    setConfig((prev) => ({
+      ...prev,
+      rewardsConfig: {
+        ...(prev.rewardsConfig as RewardsSectionConfig),
+        [field]: value,
+      },
+    }));
+  };
+
+  // Trainer list mutations
+  const handleUpdateTrainer = (index: number, field: keyof Trainer, value: any) => {
+    const updated = [...config.trainers];
+    updated[index] = { ...updated[index], [field]: value };
+    setConfig((prev) => ({ ...prev, trainers: updated }));
+  };
+
+  const handleAddTrainer = () => {
+    const newTrainer: Trainer = {
+      id: `trainer-${Date.now()}`,
+      name: 'New Coach',
+      title: 'Fitness Coach & Specialist',
+      specialties: ['Strength', 'Conditioning'],
+      avatar:
+        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80',
+      bio: 'Certified conditioning coach focused on measurable technique and sustainable athletic growth.',
+      rate: 85,
+      rating: 4.95,
+      sessionsCompleted: 140,
+    };
+    setConfig((prev) => ({ ...prev, trainers: [...prev.trainers, newTrainer] }));
+  };
+
+  const handleRemoveTrainer = (index: number) => {
+    if (config.trainers.length <= 1) return;
+    const updated = config.trainers.filter((_, i) => i !== index);
+    setConfig((prev) => ({ ...prev, trainers: updated }));
+  };
+
+  // Class schedule mutations
+  const handleUpdateClass = (index: number, field: keyof GymClass, value: any) => {
+    const updated = [...config.classes];
+    updated[index] = { ...updated[index], [field]: value };
+    setConfig((prev) => ({ ...prev, classes: updated }));
+  };
+
+  const handleAddClass = () => {
+    const firstCat = config.scheduleConfig?.categories?.find((c) => c !== 'All') || 'HIIT';
+    const newClass: GymClass = {
+      id: `class-${Date.now()}`,
+      name: 'High Intensity Session',
+      time: '6:00 PM',
+      duration: '50m',
+      instructor: config.trainers[0]?.name || 'Head Coach',
+      room: 'Main Studio',
+      category: firstCat,
+      spotsLeft: 6,
+      totalSpots: 18,
+      day: 'Mon',
+      intensity: 'High',
+    };
+    setConfig((prev) => ({ ...prev, classes: [...prev.classes, newClass] }));
+  };
+
+  const handleRemoveClass = (index: number) => {
+    if (config.classes.length <= 1) return;
+    const updated = config.classes.filter((_, i) => i !== index);
+    setConfig((prev) => ({ ...prev, classes: updated }));
+  };
+
+  // Reward vouchers mutations
+  const handleUpdateReward = (index: number, field: keyof RewardTier, value: any) => {
+    const updated = [...config.rewards];
+    updated[index] = { ...updated[index], [field]: value };
+    setConfig((prev) => ({ ...prev, rewards: updated }));
+  };
+
+  const handleAddReward = () => {
+    const nextStep = (config.rewards.length + 1) * 5;
+    const newReward: RewardTier = {
+      id: `reward-${Date.now()}`,
+      title: 'Free Post-Workout Perk',
+      reqWorkouts: nextStep,
+      description: 'Redeem at front desk upon completing monthly challenge.',
+      unlocked: false,
+      code: `PERK-${nextStep}CHECK`,
+      icon: 'shake',
+    };
+    setConfig((prev) => ({ ...prev, rewards: [...prev.rewards, newReward] }));
+  };
+
+  const handleRemoveReward = (index: number) => {
+    if (config.rewards.length <= 1) return;
+    const updated = config.rewards.filter((_, i) => i !== index);
+    setConfig((prev) => ({ ...prev, rewards: updated }));
+  };
+
   // Generate demo link & attach to lead record
   const handleGenerateLink = () => {
     const finalSlug =
@@ -172,7 +379,6 @@ function DemoBuilderContent() {
       const demoUrl = `/demo/${finalSlug}`;
       attachDemoToLead(leadId, finalSlug, demoUrl);
 
-      // Also patch via API
       fetch(`/api/leads/${leadId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -186,64 +392,14 @@ function DemoBuilderContent() {
     setIsShareModalOpen(true);
   };
 
-  // Trainer list mutations
-  const handleUpdateTrainer = (index: number, field: keyof Trainer, value: any) => {
-    const updated = [...config.trainers];
-    updated[index] = { ...updated[index], [field]: value };
-    setConfig((prev) => ({ ...prev, trainers: updated }));
-  };
-
-  const handleAddTrainer = () => {
-    const newTrainer: Trainer = {
-      id: `trainer-${Date.now()}`,
-      name: 'New Coach',
-      title: 'Fitness Coach',
-      specialties: ['Strength', 'Conditioning'],
-      avatar:
-        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80',
-      bio: 'Certified strength and conditioning coach focused on measurable athletic results.',
-      rate: 75,
-      rating: 4.95,
-      sessionsCompleted: 120,
-    };
-    setConfig((prev) => ({ ...prev, trainers: [...prev.trainers, newTrainer] }));
-  };
-
-  const handleRemoveTrainer = (index: number) => {
-    if (config.trainers.length <= 1) return;
-    const updated = config.trainers.filter((_, i) => i !== index);
-    setConfig((prev) => ({ ...prev, trainers: updated }));
-  };
-
-  // Class schedule mutations
-  const handleUpdateClass = (index: number, field: keyof GymClass, value: any) => {
-    const updated = [...config.classes];
-    updated[index] = { ...updated[index], [field]: value };
-    setConfig((prev) => ({ ...prev, classes: updated }));
-  };
-
-  const handleAddClass = () => {
-    const newClass: GymClass = {
-      id: `class-${Date.now()}`,
-      name: 'Functional Burn',
-      time: '6:00 PM',
-      duration: '45m',
-      instructor: config.trainers[0]?.name || 'Head Coach',
-      room: 'Main Studio',
-      category: 'HIIT',
-      spotsLeft: 4,
-      totalSpots: 16,
-      day: 'Mon',
-      intensity: 'High',
-    };
-    setConfig((prev) => ({ ...prev, classes: [...prev.classes, newClass] }));
-  };
-
-  const handleRemoveClass = (index: number) => {
-    if (config.classes.length <= 1) return;
-    const updated = config.classes.filter((_, i) => i !== index);
-    setConfig((prev) => ({ ...prev, classes: updated }));
-  };
+  const BUILDER_TABS: { key: BuilderTab; label: string; icon: any; badge?: string }[] = [
+    { key: 'brand', label: 'Brand & Identity', icon: Palette },
+    { key: 'home', label: 'Home Screen', icon: Home },
+    { key: 'schedule', label: 'Schedule', icon: Calendar, badge: `${config.classes.length}` },
+    { key: 'trainers', label: 'Trainers & PT', icon: Users, badge: `${config.trainers.length}` },
+    { key: 'rewards', label: 'Rewards & Loyalty', icon: Gift, badge: `${config.rewards.length}` },
+    { key: 'settings', label: 'Toggles & Push', icon: CheckSquare },
+  ];
 
   return (
     <div className="p-3 sm:p-5 lg:p-6 space-y-5 max-w-[1600px] w-full mx-auto">
@@ -315,7 +471,7 @@ function DemoBuilderContent() {
         </div>
       </div>
 
-      {/* Unified Lead Integration Banner (if leadId is present) */}
+      {/* Lead Integration Banner */}
       {leadId && (
         <div className="p-3.5 rounded-2xl bg-gradient-to-r from-emerald-950/60 to-slate-900 border border-emerald-500/30 flex flex-wrap items-center justify-between gap-3 shadow-md">
           <div className="flex items-center gap-2.5">
@@ -349,472 +505,1194 @@ function DemoBuilderContent() {
 
       {/* Main Split-Screen Container */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* LEFT COLUMN: Configuration Form */}
+        {/* LEFT COLUMN: Section-Based Configuration Tabs */}
         <div
-          className={`lg:col-span-7 space-y-5 overflow-y-auto max-h-[calc(100vh-140px)] pr-1 ${
+          className={`lg:col-span-7 space-y-4 overflow-y-auto max-h-[calc(100vh-140px)] pr-1 ${
             mobileViewMode === 'preview' ? 'hidden lg:block' : 'block'
           }`}
         >
-          {/* Preset Selector Card */}
-          <div className="p-5 rounded-3xl bg-slate-900/90 border border-white/10 shadow-xl">
-            <div className="flex items-center justify-between mb-3">
-              <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">
-                  Step 1: Rapid Industry Theme
-                </span>
-                <h2 className="text-base font-bold text-white">
-                  Select Design System Preset
-                </h2>
-              </div>
-              <span className="text-xs text-slate-400">&lt; 10 sec setup</span>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-              {[
-                { key: 'apex-fitness', label: 'Athletic Club', color: '#10B981', desc: 'Apex Fitness' },
-                { key: 'ironforge-crossfit', label: 'CrossFit Box', color: '#F97316', desc: 'IronForge WOD' },
-                { key: 'zenith-pilates', label: 'Pilates / Yoga', color: '#06B6D4', desc: 'Zenith Sanctuary' },
-                { key: 'rumble-boxing', label: 'Boxing & HIIT', color: '#EC4899', desc: 'Rumble Boxing' },
-              ].map((p) => (
+          {/* Section Selector Tab Pills */}
+          <div className="flex items-center gap-1.5 p-1.5 rounded-2xl bg-slate-900 border border-white/10 overflow-x-auto no-scrollbar shadow-lg">
+            {BUILDER_TABS.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeBuilderTab === tab.key;
+              return (
                 <button
-                  key={p.key}
-                  onClick={() => handleLoadPreset(p.key)}
-                  className={`p-3 rounded-2xl border text-left transition flex flex-col justify-between h-20 ${
-                    activePresetKey === p.key
-                      ? 'border-white bg-slate-800 shadow-md ring-1 ring-white/20'
-                      : 'border-white/5 bg-slate-800/40 hover:bg-slate-800/80'
+                  key={tab.key}
+                  type="button"
+                  onClick={() => setActiveBuilderTab(tab.key)}
+                  className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition ${
+                    isActive
+                      ? 'bg-white text-slate-950 shadow-md ring-1 ring-white/20'
+                      : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
                   }`}
                 >
-                  <div className="flex items-center justify-between">
-                    <div
-                      className="w-4 h-4 rounded-full"
-                      style={{ backgroundColor: p.color }}
-                    />
-                    {activePresetKey === p.key && (
-                      <span className="text-[10px] text-emerald-400 font-bold">Active</span>
-                    )}
-                  </div>
-                  <div>
-                    <div className="text-xs font-bold text-white">{p.label}</div>
-                    <div className="text-[10px] text-slate-400 truncate">{p.desc}</div>
-                  </div>
+                  <Icon className="w-3.5 h-3.5" />
+                  <span>{tab.label}</span>
+                  {tab.badge && (
+                    <span
+                      className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold ${
+                        isActive
+                          ? 'bg-slate-900 text-white'
+                          : 'bg-slate-800 text-slate-300'
+                      }`}
+                    >
+                      {tab.badge}
+                    </span>
+                  )}
                 </button>
-              ))}
-            </div>
+              );
+            })}
           </div>
 
-          {/* Gym Identity & Branding */}
-          <div className="p-5 rounded-3xl bg-slate-900/90 border border-white/10 shadow-xl space-y-4">
-            <div className="flex items-center gap-2 pb-2 border-b border-white/10">
-              <Sliders className="w-4 h-4 text-emerald-400" />
-              <h3 className="text-sm font-bold text-white">Prospect Brand Identity</h3>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Gym Name
-                </label>
-                <input
-                  type="text"
-                  value={config.name}
-                  onChange={(e) => handleNameChange(e.target.value)}
-                  placeholder="e.g. Apex Fitness Club"
-                  className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-white/10 text-white text-xs focus:outline-none focus:border-emerald-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Location / City
-                </label>
-                <input
-                  type="text"
-                  value={config.location}
-                  onChange={(e) => setConfig({ ...config, location: e.target.value })}
-                  placeholder="e.g. Austin, TX (Downtown)"
-                  className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-white/10 text-white text-xs focus:outline-none focus:border-emerald-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Unique Demo Slug
-                </label>
-                <div className="flex items-center gap-1.5 p-2 rounded-xl bg-slate-800 border border-white/10 text-xs text-slate-400 font-mono">
-                  <span>/demo/</span>
-                  <input
-                    type="text"
-                    value={config.slug}
-                    onChange={(e) => setConfig({ ...config, slug: e.target.value })}
-                    className="flex-1 bg-transparent text-white outline-none"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Monogram / Logo Badge
-                </label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    maxLength={6}
-                    value={config.logoMonogram || ''}
-                    onChange={(e) =>
-                      setConfig({ ...config, logoMonogram: e.target.value.toUpperCase() })
-                    }
-                    placeholder="APEX"
-                    className="w-24 px-3 py-2 rounded-xl bg-slate-800 border border-white/10 text-white text-xs font-mono font-bold uppercase focus:outline-none focus:border-emerald-500"
-                  />
-                  <span className="text-[11px] text-slate-400">
-                    Header badge & app icon
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Colors & Theme */}
-            <div className="pt-2">
-              <label className="block text-xs font-semibold text-slate-300 mb-2">
-                Primary Brand Accent Color
-              </label>
-
-              <div className="flex flex-wrap items-center gap-2.5 mb-3">
-                {PRESET_COLOR_SWATCHES.map((swatch) => (
-                  <button
-                    key={swatch.hex}
-                    type="button"
-                    onClick={() => setConfig({ ...config, primaryColor: swatch.hex })}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border transition ${
-                      config.primaryColor.toLowerCase() === swatch.hex.toLowerCase()
-                        ? 'border-white bg-slate-800 ring-2 ring-white/30 text-white'
-                        : 'border-white/10 bg-slate-800/40 text-slate-400 hover:text-white'
-                    }`}
-                  >
-                    <div
-                      className="w-3.5 h-3.5 rounded-full"
-                      style={{ backgroundColor: swatch.hex }}
-                    />
-                    <span>{swatch.name}</span>
-                  </button>
-                ))}
-
-                {/* Custom Color Input */}
-                <div className="flex items-center gap-1.5 px-2 py-1 rounded-xl bg-slate-800 border border-white/10">
-                  <input
-                    type="color"
-                    value={config.primaryColor}
-                    onChange={(e) => setConfig({ ...config, primaryColor: e.target.value })}
-                    className="w-6 h-6 rounded cursor-pointer bg-transparent border-0"
-                  />
-                  <span className="text-xs font-mono text-slate-300">
-                    {config.primaryColor}
-                  </span>
-                </div>
-              </div>
-
-              {/* Dark / Light Mode Toggle */}
-              <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-800/40 border border-white/5">
-                <div>
-                  <div className="text-xs font-bold text-white">App Dark / Light Mode</div>
-                  <div className="text-[11px] text-slate-400">
-                    Switch between sleek luxury dark aesthetic or boutique studio light mode
+          {/* TAB 1: Brand & Presets */}
+          {activeBuilderTab === 'brand' && (
+            <div className="space-y-4">
+              {/* Presets Card */}
+              <div className="p-5 rounded-3xl bg-slate-900/90 border border-white/10 shadow-xl">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">
+                      Step 1: Rapid Industry Theme
+                    </span>
+                    <h2 className="text-base font-bold text-white">
+                      Select Design System Preset
+                    </h2>
                   </div>
+                  <span className="text-xs text-slate-400">&lt; 10 sec setup</span>
                 </div>
 
-                <div className="flex items-center p-1 bg-slate-900 rounded-xl border border-white/10">
-                  <button
-                    type="button"
-                    onClick={() => setConfig({ ...config, isDarkMode: true })}
-                    className={`px-3 py-1 text-xs font-bold rounded-lg transition ${
-                      config.isDarkMode ? 'bg-slate-700 text-white' : 'text-slate-400'
-                    }`}
-                  >
-                    Dark
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setConfig({ ...config, isDarkMode: false })}
-                    className={`px-3 py-1 text-xs font-bold rounded-lg transition ${
-                      !config.isDarkMode ? 'bg-white text-slate-950 font-bold' : 'text-slate-400'
-                    }`}
-                  >
-                    Light
-                  </button>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                  {[
+                    { key: 'apex-fitness', label: 'Athletic Club', color: '#10B981', desc: 'Apex Fitness' },
+                    { key: 'ironforge-crossfit', label: 'CrossFit Box', color: '#F97316', desc: 'IronForge WOD' },
+                    { key: 'zenith-pilates', label: 'Pilates / Yoga', color: '#06B6D4', desc: 'Zenith Sanctuary' },
+                    { key: 'rumble-boxing', label: 'Boxing & HIIT', color: '#EC4899', desc: 'Rumble Boxing' },
+                  ].map((p) => (
+                    <button
+                      key={p.key}
+                      type="button"
+                      onClick={() => handleLoadPreset(p.key)}
+                      className={`p-3 rounded-2xl border text-left transition flex flex-col justify-between h-20 ${
+                        activePresetKey === p.key
+                          ? 'border-white bg-slate-800 shadow-md ring-1 ring-white/20'
+                          : 'border-white/5 bg-slate-800/40 hover:bg-slate-800/80'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div
+                          className="w-4 h-4 rounded-full"
+                          style={{ backgroundColor: p.color }}
+                        />
+                        {activePresetKey === p.key && (
+                          <span className="text-[10px] text-emerald-400 font-bold">Active</span>
+                        )}
+                      </div>
+                      <div>
+                        <div className="text-xs font-bold text-white">{p.label}</div>
+                        <div className="text-[10px] text-slate-400 truncate">{p.desc}</div>
+                      </div>
+                    </button>
+                  ))}
                 </div>
               </div>
-            </div>
-          </div>
 
-          {/* Feature Toggles */}
-          <div className="p-5 rounded-3xl bg-slate-900/90 border border-white/10 shadow-xl space-y-3">
-            <div className="flex items-center gap-2 pb-2 border-b border-white/10">
-              <CheckSquare className="w-4 h-4 text-emerald-400" />
-              <h3 className="text-sm font-bold text-white">Feature Toggles & Modules</h3>
-            </div>
+              {/* Identity & Aesthetics */}
+              <div className="p-5 rounded-3xl bg-slate-900/90 border border-white/10 shadow-xl space-y-4">
+                <div className="flex items-center gap-2 pb-2 border-b border-white/10">
+                  <Sliders className="w-4 h-4 text-emerald-400" />
+                  <h3 className="text-sm font-bold text-white">Prospect Brand Identity</h3>
+                </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              {[
-                {
-                  key: 'classBooking' as const,
-                  title: 'Live Class Booking & Slots',
-                  desc: '7-day schedule, capacity decrement & calendar sync',
-                },
-                {
-                  key: 'trainerScheduler' as const,
-                  title: 'Trainer 1-on-1 PT Scheduler',
-                  desc: 'Select 30m/60m session, time slot & price breakdown',
-                },
-                {
-                  key: 'loyaltyPunchCard' as const,
-                  title: 'Digital Loyalty & Streak Tracker',
-                  desc: 'Interactive attendance check-in stamp & confetti perks',
-                },
-                {
-                  key: 'pushNotification' as const,
-                  title: 'Simulated In-App Push Alert',
-                  desc: 'Smooth drop-down banner after 3 seconds',
-                },
-                {
-                  key: 'passPurchase' as const,
-                  title: 'Instant Pass & QR Turnstile Pass',
-                  desc: 'Interactive digital access pass with laser scan bar',
-                },
-              ].map((feat) => {
-                const isEnabled = config.features[feat.key];
-                return (
-                  <label
-                    key={feat.key}
-                    className={`flex items-start gap-3 p-3 rounded-2xl border transition cursor-pointer select-none ${
-                      isEnabled
-                        ? 'bg-slate-800/80 border-emerald-500/40'
-                        : 'bg-slate-900/40 border-white/5 opacity-60'
-                    }`}
-                  >
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">
+                      Gym Name
+                    </label>
                     <input
-                      type="checkbox"
-                      checked={isEnabled}
+                      type="text"
+                      value={config.name}
+                      onChange={(e) => handleNameChange(e.target.value)}
+                      placeholder="e.g. Apex Fitness Club"
+                      className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-white/10 text-white text-xs focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">
+                      Location / City
+                    </label>
+                    <input
+                      type="text"
+                      value={config.location}
+                      onChange={(e) => setConfig({ ...config, location: e.target.value })}
+                      placeholder="e.g. Austin, TX (Downtown)"
+                      className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-white/10 text-white text-xs focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">
+                      Industry Studio Type
+                    </label>
+                    <select
+                      value={config.industryType}
                       onChange={(e) =>
                         setConfig({
                           ...config,
-                          features: {
-                            ...config.features,
-                            [feat.key]: e.target.checked,
-                          },
+                          industryType: e.target.value as any,
                         })
                       }
-                      className="mt-0.5 w-4 h-4 rounded text-emerald-500 focus:ring-0 accent-emerald-500 cursor-pointer"
-                    />
-                    <div>
-                      <div className="text-xs font-bold text-white">{feat.title}</div>
-                      <div className="text-[10px] text-slate-400 leading-tight mt-0.5">
-                        {feat.desc}
-                      </div>
-                    </div>
-                  </label>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Push Notification Copy */}
-          <div className="p-5 rounded-3xl bg-slate-900/90 border border-white/10 shadow-xl space-y-3">
-            <div className="flex items-center gap-2 pb-2 border-b border-white/10">
-              <Bell className="w-4 h-4 text-amber-400" />
-              <h3 className="text-sm font-bold text-white">Push Notification Text</h3>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
-                Simulated Lock Screen Alert
-              </label>
-              <textarea
-                rows={2}
-                value={
-                  config.customPushMessage ||
-                  `🔥 ${config.name} Reminder: 2 spots left for 6:00 PM HIIT Burn tonight! Tap to reserve.`
-                }
-                onChange={(e) =>
-                  setConfig({ ...config, customPushMessage: e.target.value })
-                }
-                className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-white/10 text-white text-xs focus:outline-none focus:border-emerald-500"
-              />
-            </div>
-          </div>
-
-          {/* Trainer Roster Editor */}
-          <div className="p-5 rounded-3xl bg-slate-900/90 border border-white/10 shadow-xl space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-white/10">
-              <div className="flex items-center gap-2">
-                <Users className="w-4 h-4 text-emerald-400" />
-                <h3 className="text-sm font-bold text-white">Trainer Roster ({config.trainers.length})</h3>
-              </div>
-              <button
-                type="button"
-                onClick={handleAddTrainer}
-                className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-white/10 transition"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>Add Trainer</span>
-              </button>
-            </div>
-
-            <div className="space-y-3">
-              {config.trainers.map((trainer, idx) => (
-                <div
-                  key={trainer.id || idx}
-                  className="p-3.5 rounded-2xl bg-slate-800/50 border border-white/5 space-y-2.5"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-emerald-400">Coach #{idx + 1}</span>
-                    {config.trainers.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveTrainer(idx)}
-                        className="text-slate-400 hover:text-red-400 p-1"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                    <div>
-                      <label className="text-[10px] text-slate-400 font-semibold block">Name</label>
-                      <input
-                        type="text"
-                        value={trainer.name}
-                        onChange={(e) => handleUpdateTrainer(idx, 'name', e.target.value)}
-                        className="w-full px-2.5 py-1.5 rounded-lg bg-slate-800 border border-white/10 text-white text-xs"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="text-[10px] text-slate-400 font-semibold block">Title</label>
-                      <input
-                        type="text"
-                        value={trainer.title}
-                        onChange={(e) => handleUpdateTrainer(idx, 'title', e.target.value)}
-                        className="w-full px-2.5 py-1.5 rounded-lg bg-slate-800 border border-white/10 text-white text-xs"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="text-[10px] text-slate-400 font-semibold block">Rate ($/hr)</label>
-                      <input
-                        type="number"
-                        value={trainer.rate}
-                        onChange={(e) =>
-                          handleUpdateTrainer(idx, 'rate', Number(e.target.value) || 0)
-                        }
-                        className="w-full px-2.5 py-1.5 rounded-lg bg-slate-800 border border-white/10 text-white text-xs"
-                      />
-                    </div>
+                      className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-white/10 text-white text-xs focus:outline-none focus:border-emerald-500"
+                    >
+                      <option value="Athletic Club">Athletic Club</option>
+                      <option value="CrossFit Box">CrossFit Box</option>
+                      <option value="Pilates & Yoga">Pilates & Yoga</option>
+                      <option value="Boxing & HIIT">Boxing & HIIT</option>
+                    </select>
                   </div>
 
                   <div>
-                    <label className="text-[10px] text-slate-400 font-semibold block">Avatar Image URL</label>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">
+                      Monogram / Logo Badge
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        maxLength={6}
+                        value={config.logoMonogram || ''}
+                        onChange={(e) =>
+                          setConfig({ ...config, logoMonogram: e.target.value.toUpperCase() })
+                        }
+                        placeholder="APEX"
+                        className="w-24 px-3 py-2 rounded-xl bg-slate-800 border border-white/10 text-white text-xs font-mono font-bold uppercase focus:outline-none focus:border-emerald-500"
+                      />
+                      <span className="text-[11px] text-slate-400">
+                        Header badge & app icon monogram
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">
+                      Unique Demo Slug
+                    </label>
+                    <div className="flex items-center gap-1.5 p-2 rounded-xl bg-slate-800 border border-white/10 text-xs text-slate-400 font-mono">
+                      <span>/demo/</span>
+                      <input
+                        type="text"
+                        value={config.slug}
+                        onChange={(e) => setConfig({ ...config, slug: e.target.value })}
+                        className="flex-1 bg-transparent text-white outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Colors & Theme */}
+                <div className="pt-2">
+                  <label className="block text-xs font-semibold text-slate-300 mb-2">
+                    Primary Brand Accent Color
+                  </label>
+
+                  <div className="flex flex-wrap items-center gap-2.5 mb-3">
+                    {PRESET_COLOR_SWATCHES.map((swatch) => (
+                      <button
+                        key={swatch.hex}
+                        type="button"
+                        onClick={() => setConfig({ ...config, primaryColor: swatch.hex })}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border transition ${
+                          config.primaryColor.toLowerCase() === swatch.hex.toLowerCase()
+                            ? 'border-white bg-slate-800 ring-2 ring-white/30 text-white'
+                            : 'border-white/10 bg-slate-800/40 text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        <div
+                          className="w-3.5 h-3.5 rounded-full"
+                          style={{ backgroundColor: swatch.hex }}
+                        />
+                        <span>{swatch.name}</span>
+                      </button>
+                    ))}
+
+                    <div className="flex items-center gap-1.5 px-2 py-1 rounded-xl bg-slate-800 border border-white/10">
+                      <input
+                        type="color"
+                        value={config.primaryColor}
+                        onChange={(e) => setConfig({ ...config, primaryColor: e.target.value })}
+                        className="w-6 h-6 rounded cursor-pointer bg-transparent border-0"
+                      />
+                      <span className="text-xs font-mono text-slate-300">
+                        {config.primaryColor}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Dark / Light Mode Toggle */}
+                  <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-800/40 border border-white/5">
+                    <div>
+                      <div className="text-xs font-bold text-white">App Dark / Light Mode</div>
+                      <div className="text-[11px] text-slate-400">
+                        Switch between sleek luxury dark aesthetic or boutique studio light mode
+                      </div>
+                    </div>
+
+                    <div className="flex items-center p-1 bg-slate-900 rounded-xl border border-white/10">
+                      <button
+                        type="button"
+                        onClick={() => setConfig({ ...config, isDarkMode: true })}
+                        className={`px-3 py-1 text-xs font-bold rounded-lg transition ${
+                          config.isDarkMode ? 'bg-slate-700 text-white' : 'text-slate-400'
+                        }`}
+                      >
+                        Dark
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setConfig({ ...config, isDarkMode: false })}
+                        className={`px-3 py-1 text-xs font-bold rounded-lg transition ${
+                          !config.isDarkMode ? 'bg-white text-slate-950 font-bold' : 'text-slate-400'
+                        }`}
+                      >
+                        Light
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 2: Home Screen Settings */}
+          {activeBuilderTab === 'home' && (
+            <div className="p-5 rounded-3xl bg-slate-900/90 border border-white/10 shadow-xl space-y-4">
+              <div className="flex items-center justify-between pb-2 border-b border-white/10">
+                <div className="flex items-center gap-2">
+                  <Home className="w-4 h-4 text-emerald-400" />
+                  <div>
+                    <h3 className="text-sm font-bold text-white">Home Screen Section Editor</h3>
+                    <p className="text-[11px] text-slate-400">
+                      Customize greetings, membership titles, and quick action labels
+                    </p>
+                  </div>
+                </div>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400">
+                  Live Preview
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">
+                    Member Welcome Greeting
+                  </label>
+                  <input
+                    type="text"
+                    value={config.homeConfig?.greeting || ''}
+                    onChange={(e) => handleUpdateHomeConfig('greeting', e.target.value)}
+                    placeholder="e.g. Welcome back, Alex!"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-white/10 text-white text-xs focus:outline-none focus:border-emerald-500"
+                  />
+                  <span className="text-[10px] text-slate-400 mt-1 block">
+                    Displays on the top left of the member home dashboard.
+                  </span>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">
+                    Member Status / VIP Badge
+                  </label>
+                  <input
+                    type="text"
+                    value={config.homeConfig?.memberBadge || ''}
+                    onChange={(e) => handleUpdateHomeConfig('memberBadge', e.target.value)}
+                    placeholder="e.g. VIP Member or RX Athlete"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-white/10 text-white text-xs focus:outline-none focus:border-emerald-500"
+                  />
+                  <span className="text-[10px] text-slate-400 mt-1 block">
+                    Pill badge highlighted in primary brand color.
+                  </span>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">
+                    Activity Card Title
+                  </label>
+                  <input
+                    type="text"
+                    value={config.homeConfig?.membershipCardTitle || ''}
+                    onChange={(e) => handleUpdateHomeConfig('membershipCardTitle', e.target.value)}
+                    placeholder="e.g. Monthly Attendance or WOD Progress"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-white/10 text-white text-xs focus:outline-none focus:border-emerald-500"
+                  />
+                  <span className="text-[10px] text-slate-400 mt-1 block">
+                    Header of the attendance/consistency summary card.
+                  </span>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">
+                    Featured Class Tag
+                  </label>
+                  <input
+                    type="text"
+                    value={config.homeConfig?.featuredClassBadge || ''}
+                    onChange={(e) => handleUpdateHomeConfig('featuredClassBadge', e.target.value)}
+                    placeholder="e.g. Up Next Today or Next Heat"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-white/10 text-white text-xs focus:outline-none focus:border-emerald-500"
+                  />
+                  <span className="text-[10px] text-slate-400 mt-1 block">
+                    Tag badge displayed on top of the featured workout card.
+                  </span>
+                </div>
+              </div>
+
+              {/* Quick Action Button Labels */}
+              <div className="pt-3 border-t border-white/10 space-y-3">
+                <h4 className="text-xs font-bold text-slate-200">
+                  Quick Action Shortcut Buttons (Home Screen 3-Grid)
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="text-[10px] font-semibold text-slate-400 block mb-1">
+                      Button 1 (Calendar)
+                    </label>
                     <input
                       type="text"
-                      value={trainer.avatar}
-                      onChange={(e) => handleUpdateTrainer(idx, 'avatar', e.target.value)}
-                      className="w-full px-2.5 py-1.5 rounded-lg bg-slate-800 border border-white/10 text-white text-xs truncate"
+                      value={config.homeConfig?.quickAction1Label || ''}
+                      onChange={(e) =>
+                        handleUpdateHomeConfig('quickAction1Label', e.target.value)
+                      }
+                      placeholder="Book Class"
+                      className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-white/10 text-white text-xs focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-semibold text-slate-400 block mb-1">
+                      Button 2 (Turnstile QR)
+                    </label>
+                    <input
+                      type="text"
+                      value={config.homeConfig?.quickAction2Label || ''}
+                      onChange={(e) =>
+                        handleUpdateHomeConfig('quickAction2Label', e.target.value)
+                      }
+                      placeholder="Scan Pass"
+                      className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-white/10 text-white text-xs focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-semibold text-slate-400 block mb-1">
+                      Button 3 (Streak / Fire)
+                    </label>
+                    <input
+                      type="text"
+                      value={config.homeConfig?.quickAction3Label || ''}
+                      onChange={(e) =>
+                        handleUpdateHomeConfig('quickAction3Label', e.target.value)
+                      }
+                      placeholder="Streak"
+                      className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-white/10 text-white text-xs focus:outline-none focus:border-emerald-500"
                     />
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Class Schedule Highlights */}
-          <div className="p-5 rounded-3xl bg-slate-900/90 border border-white/10 shadow-xl space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-white/10">
-              <div className="flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-emerald-400" />
-                <h3 className="text-sm font-bold text-white">Class Schedule Highlights ({config.classes.length})</h3>
               </div>
-              <button
-                type="button"
-                onClick={handleAddClass}
-                className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-white/10 transition"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>Add Class</span>
-              </button>
             </div>
+          )}
 
-            <div className="space-y-3">
-              {config.classes.map((cls, idx) => (
-                <div
-                  key={cls.id || idx}
-                  className="p-3.5 rounded-2xl bg-slate-800/50 border border-white/5 space-y-2.5"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-emerald-400">Class #{idx + 1}</span>
-                    {config.classes.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveClass(idx)}
-                        className="text-slate-400 hover:text-red-400 p-1"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    <div>
-                      <label className="text-[10px] text-slate-400 font-semibold block">Name</label>
-                      <input
-                        type="text"
-                        value={cls.name}
-                        onChange={(e) => handleUpdateClass(idx, 'name', e.target.value)}
-                        className="w-full px-2.5 py-1.5 rounded-lg bg-slate-800 border border-white/10 text-white text-xs"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="text-[10px] text-slate-400 font-semibold block">Time</label>
-                      <input
-                        type="text"
-                        value={cls.time}
-                        onChange={(e) => handleUpdateClass(idx, 'time', e.target.value)}
-                        className="w-full px-2.5 py-1.5 rounded-lg bg-slate-800 border border-white/10 text-white text-xs"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="text-[10px] text-slate-400 font-semibold block">Day</label>
-                      <select
-                        value={cls.day}
-                        onChange={(e) => handleUpdateClass(idx, 'day', e.target.value)}
-                        className="w-full px-2.5 py-1.5 rounded-lg bg-slate-800 border border-white/10 text-white text-xs"
-                      >
-                        {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d) => (
-                          <option key={d} value={d}>
-                            {d}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="text-[10px] text-slate-400 font-semibold block">Open Spots</label>
-                      <input
-                        type="number"
-                        value={cls.spotsLeft}
-                        onChange={(e) =>
-                          handleUpdateClass(idx, 'spotsLeft', Number(e.target.value) || 0)
-                        }
-                        className="w-full px-2.5 py-1.5 rounded-lg bg-slate-800 border border-white/10 text-white text-xs"
-                      />
-                    </div>
+          {/* TAB 3: Schedule & Classes */}
+          {activeBuilderTab === 'schedule' && (
+            <div className="space-y-4">
+              {/* Schedule Section Header Settings */}
+              <div className="p-5 rounded-3xl bg-slate-900/90 border border-white/10 shadow-xl space-y-4">
+                <div className="flex items-center gap-2 pb-2 border-b border-white/10">
+                  <Calendar className="w-4 h-4 text-emerald-400" />
+                  <div>
+                    <h3 className="text-sm font-bold text-white">Schedule Section Headers</h3>
+                    <p className="text-[11px] text-slate-400">
+                      Adapt titles and booking copy to CrossFit, Pilates, Boxing, or Athletic Clubs
+                    </p>
                   </div>
                 </div>
-              ))}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">
+                      Schedule Screen Title
+                    </label>
+                    <input
+                      type="text"
+                      value={config.scheduleConfig?.title || ''}
+                      onChange={(e) => handleUpdateScheduleConfig('title', e.target.value)}
+                      placeholder="e.g. Live Class Schedule or Daily WOD Lineup"
+                      className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-white/10 text-white text-xs focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">
+                      Schedule Subtitle
+                    </label>
+                    <input
+                      type="text"
+                      value={config.scheduleConfig?.subtitle || ''}
+                      onChange={(e) => handleUpdateScheduleConfig('subtitle', e.target.value)}
+                      placeholder="e.g. Book your workout slot in real time"
+                      className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-white/10 text-white text-xs focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">
+                      Booking Confirmation Toast Message
+                    </label>
+                    <input
+                      type="text"
+                      value={config.scheduleConfig?.confirmationToast || ''}
+                      onChange={(e) =>
+                        handleUpdateScheduleConfig('confirmationToast', e.target.value)
+                      }
+                      placeholder="e.g. You're booked! Added to Apple Calendar ✓"
+                      className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-white/10 text-white text-xs focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Dynamic Category Pills */}
+                <div className="pt-3 border-t border-white/10 space-y-2">
+                  <label className="block text-xs font-semibold text-slate-300">
+                    Category Filter Pills
+                  </label>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {(config.scheduleConfig?.categories || []).map((cat) => (
+                      <span
+                        key={cat}
+                        className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-800 border border-white/10 text-white text-xs"
+                      >
+                        <span>{cat}</span>
+                        {cat !== 'All' && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveCategory(cat)}
+                            className="text-slate-400 hover:text-red-400 transition"
+                          >
+                            ×
+                          </button>
+                        )}
+                      </span>
+                    ))}
+                  </div>
+
+                  {/* Add Category Input */}
+                  <div className="flex items-center gap-2 pt-1 max-w-sm">
+                    <input
+                      type="text"
+                      value={newCategoryInput}
+                      onChange={(e) => setNewCategoryInput(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddCategory())}
+                      placeholder="New category (e.g. Reformer, WOD, Spin)"
+                      className="flex-1 px-3 py-1.5 rounded-xl bg-slate-800 border border-white/10 text-white text-xs focus:outline-none focus:border-emerald-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddCategory}
+                      className="px-3 py-1.5 rounded-xl bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold transition"
+                    >
+                      Add
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Class Lineup Editor */}
+              <div className="p-5 rounded-3xl bg-slate-900/90 border border-white/10 shadow-xl space-y-4">
+                <div className="flex items-center justify-between pb-2 border-b border-white/10">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-emerald-400" />
+                    <h3 className="text-sm font-bold text-white">
+                      Class Roster ({config.classes.length})
+                    </h3>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleAddClass}
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-white/10 transition"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add Class</span>
+                  </button>
+                </div>
+
+                <div className="space-y-3">
+                  {config.classes.map((cls, idx) => (
+                    <div
+                      key={cls.id || idx}
+                      className="p-3.5 rounded-2xl bg-slate-800/50 border border-white/5 space-y-2.5"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-emerald-400">Class #{idx + 1}</span>
+                        {config.classes.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveClass(idx)}
+                            className="text-slate-400 hover:text-red-400 p-1 transition"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        <div className="col-span-2">
+                          <label className="text-[10px] text-slate-400 font-semibold block">
+                            Class Name
+                          </label>
+                          <input
+                            type="text"
+                            value={cls.name}
+                            onChange={(e) => handleUpdateClass(idx, 'name', e.target.value)}
+                            className="w-full px-2.5 py-1.5 rounded-lg bg-slate-800 border border-white/10 text-white text-xs"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] text-slate-400 font-semibold block">
+                            Category
+                          </label>
+                          <input
+                            type="text"
+                            value={cls.category}
+                            onChange={(e) => handleUpdateClass(idx, 'category', e.target.value)}
+                            placeholder="e.g. HIIT, Strength"
+                            className="w-full px-2.5 py-1.5 rounded-lg bg-slate-800 border border-white/10 text-white text-xs"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] text-slate-400 font-semibold block">
+                            Day
+                          </label>
+                          <select
+                            value={cls.day}
+                            onChange={(e) => handleUpdateClass(idx, 'day', e.target.value)}
+                            className="w-full px-2.5 py-1.5 rounded-lg bg-slate-800 border border-white/10 text-white text-xs"
+                          >
+                            {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d) => (
+                              <option key={d} value={d}>
+                                {d}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] text-slate-400 font-semibold block">
+                            Start Time
+                          </label>
+                          <input
+                            type="text"
+                            value={cls.time}
+                            onChange={(e) => handleUpdateClass(idx, 'time', e.target.value)}
+                            className="w-full px-2.5 py-1.5 rounded-lg bg-slate-800 border border-white/10 text-white text-xs"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] text-slate-400 font-semibold block">
+                            Duration
+                          </label>
+                          <input
+                            type="text"
+                            value={cls.duration}
+                            onChange={(e) => handleUpdateClass(idx, 'duration', e.target.value)}
+                            placeholder="45m"
+                            className="w-full px-2.5 py-1.5 rounded-lg bg-slate-800 border border-white/10 text-white text-xs"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] text-slate-400 font-semibold block">
+                            Instructor
+                          </label>
+                          <input
+                            type="text"
+                            value={cls.instructor}
+                            onChange={(e) => handleUpdateClass(idx, 'instructor', e.target.value)}
+                            className="w-full px-2.5 py-1.5 rounded-lg bg-slate-800 border border-white/10 text-white text-xs"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] text-slate-400 font-semibold block">
+                            Room / Studio
+                          </label>
+                          <input
+                            type="text"
+                            value={cls.room}
+                            onChange={(e) => handleUpdateClass(idx, 'room', e.target.value)}
+                            placeholder="Main Studio"
+                            className="w-full px-2.5 py-1.5 rounded-lg bg-slate-800 border border-white/10 text-white text-xs"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] text-slate-400 font-semibold block">
+                            Open Spots
+                          </label>
+                          <input
+                            type="number"
+                            value={cls.spotsLeft}
+                            onChange={(e) =>
+                              handleUpdateClass(idx, 'spotsLeft', Number(e.target.value) || 0)
+                            }
+                            className="w-full px-2.5 py-1.5 rounded-lg bg-slate-800 border border-white/10 text-white text-xs"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] text-slate-400 font-semibold block">
+                            Total Spots
+                          </label>
+                          <input
+                            type="number"
+                            value={cls.totalSpots}
+                            onChange={(e) =>
+                              handleUpdateClass(idx, 'totalSpots', Number(e.target.value) || 0)
+                            }
+                            className="w-full px-2.5 py-1.5 rounded-lg bg-slate-800 border border-white/10 text-white text-xs"
+                          />
+                        </div>
+
+                        <div className="col-span-2">
+                          <label className="text-[10px] text-slate-400 font-semibold block">
+                            Intensity
+                          </label>
+                          <select
+                            value={cls.intensity}
+                            onChange={(e) =>
+                              handleUpdateClass(idx, 'intensity', e.target.value as any)
+                            }
+                            className="w-full px-2.5 py-1.5 rounded-lg bg-slate-800 border border-white/10 text-white text-xs"
+                          >
+                            <option value="All Levels">All Levels</option>
+                            <option value="Medium">Medium</option>
+                            <option value="High">High</option>
+                            <option value="Extreme">Extreme</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* TAB 4: Trainers & PT */}
+          {activeBuilderTab === 'trainers' && (
+            <div className="space-y-4">
+              {/* Trainers Header Config */}
+              <div className="p-5 rounded-3xl bg-slate-900/90 border border-white/10 shadow-xl space-y-4">
+                <div className="flex items-center gap-2 pb-2 border-b border-white/10">
+                  <Users className="w-4 h-4 text-emerald-400" />
+                  <div>
+                    <h3 className="text-sm font-bold text-white">Trainers Section Headers</h3>
+                    <p className="text-[11px] text-slate-400">
+                      Customize section title and description to fit gym coaching styles
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">
+                      Screen Title
+                    </label>
+                    <input
+                      type="text"
+                      value={config.trainersConfig?.title || ''}
+                      onChange={(e) => handleUpdateTrainersConfig('title', e.target.value)}
+                      placeholder="e.g. Coaches & Trainers"
+                      className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-white/10 text-white text-xs focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">
+                      Screen Subtitle
+                    </label>
+                    <input
+                      type="text"
+                      value={config.trainersConfig?.subtitle || ''}
+                      onChange={(e) => handleUpdateTrainersConfig('subtitle', e.target.value)}
+                      placeholder="e.g. 1-on-1 private coaching & assessments"
+                      className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-white/10 text-white text-xs focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Trainer Roster List */}
+              <div className="p-5 rounded-3xl bg-slate-900/90 border border-white/10 shadow-xl space-y-4">
+                <div className="flex items-center justify-between pb-2 border-b border-white/10">
+                  <div className="flex items-center gap-2">
+                    <Users className="w-4 h-4 text-emerald-400" />
+                    <h3 className="text-sm font-bold text-white">
+                      Trainer Roster ({config.trainers.length})
+                    </h3>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleAddTrainer}
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-white/10 transition"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add Trainer</span>
+                  </button>
+                </div>
+
+                <div className="space-y-4">
+                  {config.trainers.map((trainer, idx) => (
+                    <div
+                      key={trainer.id || idx}
+                      className="p-4 rounded-2xl bg-slate-800/50 border border-white/5 space-y-3"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <img
+                            src={trainer.avatar}
+                            alt={trainer.name}
+                            className="w-8 h-8 rounded-full object-cover ring-1 ring-white/20"
+                          />
+                          <span className="text-xs font-bold text-emerald-400">
+                            Coach #{idx + 1}: {trainer.name}
+                          </span>
+                        </div>
+                        {config.trainers.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveTrainer(idx)}
+                            className="text-slate-400 hover:text-red-400 p-1 transition"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                        <div>
+                          <label className="text-[10px] text-slate-400 font-semibold block">
+                            Full Name
+                          </label>
+                          <input
+                            type="text"
+                            value={trainer.name}
+                            onChange={(e) => handleUpdateTrainer(idx, 'name', e.target.value)}
+                            className="w-full px-2.5 py-1.5 rounded-lg bg-slate-800 border border-white/10 text-white text-xs"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] text-slate-400 font-semibold block">
+                            Title / Specialty Role
+                          </label>
+                          <input
+                            type="text"
+                            value={trainer.title}
+                            onChange={(e) => handleUpdateTrainer(idx, 'title', e.target.value)}
+                            className="w-full px-2.5 py-1.5 rounded-lg bg-slate-800 border border-white/10 text-white text-xs"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] text-slate-400 font-semibold block">
+                            Rate ($/hr)
+                          </label>
+                          <input
+                            type="number"
+                            value={trainer.rate}
+                            onChange={(e) =>
+                              handleUpdateTrainer(idx, 'rate', Number(e.target.value) || 0)
+                            }
+                            className="w-full px-2.5 py-1.5 rounded-lg bg-slate-800 border border-white/10 text-white text-xs"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <div>
+                          <label className="text-[10px] text-slate-400 font-semibold block">
+                            Avatar Image URL
+                          </label>
+                          <input
+                            type="text"
+                            value={trainer.avatar}
+                            onChange={(e) => handleUpdateTrainer(idx, 'avatar', e.target.value)}
+                            className="w-full px-2.5 py-1.5 rounded-lg bg-slate-800 border border-white/10 text-white text-xs truncate"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] text-slate-400 font-semibold block">
+                            Specialties (comma-separated)
+                          </label>
+                          <input
+                            type="text"
+                            value={trainer.specialties.join(', ')}
+                            onChange={(e) =>
+                              handleUpdateTrainer(
+                                idx,
+                                'specialties',
+                                e.target.value.split(',').map((s) => s.trim()).filter(Boolean)
+                              )
+                            }
+                            placeholder="Strength, Mobility, WOD"
+                            className="w-full px-2.5 py-1.5 rounded-lg bg-slate-800 border border-white/10 text-white text-xs"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="text-[10px] text-slate-400 font-semibold block">
+                          Bio & Philosophy
+                        </label>
+                        <textarea
+                          rows={2}
+                          value={trainer.bio}
+                          onChange={(e) => handleUpdateTrainer(idx, 'bio', e.target.value)}
+                          className="w-full px-2.5 py-1.5 rounded-lg bg-slate-800 border border-white/10 text-white text-xs"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 5: Rewards & Loyalty */}
+          {activeBuilderTab === 'rewards' && (
+            <div className="space-y-4">
+              {/* Rewards Section Headers & Rules */}
+              <div className="p-5 rounded-3xl bg-slate-900/90 border border-white/10 shadow-xl space-y-4">
+                <div className="flex items-center gap-2 pb-2 border-b border-white/10">
+                  <Gift className="w-4 h-4 text-emerald-400" />
+                  <div>
+                    <h3 className="text-sm font-bold text-white">Rewards Section & Loyalty Pass</h3>
+                    <p className="text-[11px] text-slate-400">
+                      Control digital punch card passport, workout goals, and tier badges
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">
+                      Screen Title
+                    </label>
+                    <input
+                      type="text"
+                      value={config.rewardsConfig?.title || ''}
+                      onChange={(e) => handleUpdateRewardsConfig('title', e.target.value)}
+                      placeholder="e.g. Member Rewards or WOD Passport"
+                      className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-white/10 text-white text-xs focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">
+                      Screen Subtitle
+                    </label>
+                    <input
+                      type="text"
+                      value={config.rewardsConfig?.subtitle || ''}
+                      onChange={(e) => handleUpdateRewardsConfig('subtitle', e.target.value)}
+                      placeholder="e.g. Punch card, streaks & member perks"
+                      className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-white/10 text-white text-xs focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">
+                      Member Tier Badge Name
+                    </label>
+                    <input
+                      type="text"
+                      value={config.rewardsConfig?.tierBadge || ''}
+                      onChange={(e) => handleUpdateRewardsConfig('tierBadge', e.target.value)}
+                      placeholder="e.g. Tier 2 Athlete or RX Athlete"
+                      className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-white/10 text-white text-xs focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">
+                      Monthly Workout Goal (Target)
+                    </label>
+                    <input
+                      type="number"
+                      value={config.rewardsConfig?.monthlyGoal || 20}
+                      onChange={(e) =>
+                        handleUpdateRewardsConfig('monthlyGoal', Number(e.target.value) || 20)
+                      }
+                      className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-white/10 text-white text-xs focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">
+                      Initial Starting Streak (Days)
+                    </label>
+                    <input
+                      type="number"
+                      value={config.rewardsConfig?.startingStreak ?? 14}
+                      onChange={(e) =>
+                        handleUpdateRewardsConfig('startingStreak', Number(e.target.value) || 0)
+                      }
+                      className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-white/10 text-white text-xs focus:outline-none focus:border-emerald-500"
+                    />
+                    <span className="text-[10px] text-slate-400 mt-1 block">
+                      Controls the simulated streak counter in the live demo.
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Reward Vouchers List */}
+              <div className="p-5 rounded-3xl bg-slate-900/90 border border-white/10 shadow-xl space-y-4">
+                <div className="flex items-center justify-between pb-2 border-b border-white/10">
+                  <div className="flex items-center gap-2">
+                    <Award className="w-4 h-4 text-amber-400" />
+                    <h3 className="text-sm font-bold text-white">
+                      Reward Vouchers & Perks ({config.rewards.length})
+                    </h3>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleAddReward}
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-white/10 transition"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add Voucher</span>
+                  </button>
+                </div>
+
+                <div className="space-y-3">
+                  {config.rewards.map((reward, idx) => (
+                    <div
+                      key={reward.id || idx}
+                      className="p-3.5 rounded-2xl bg-slate-800/50 border border-white/5 space-y-2.5"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-amber-400">
+                          Reward #{idx + 1}: {reward.title}
+                        </span>
+                        {config.rewards.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveReward(idx)}
+                            className="text-slate-400 hover:text-red-400 p-1 transition"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <div className="sm:col-span-2">
+                          <label className="text-[10px] text-slate-400 font-semibold block">
+                            Voucher Title
+                          </label>
+                          <input
+                            type="text"
+                            value={reward.title}
+                            onChange={(e) => handleUpdateReward(idx, 'title', e.target.value)}
+                            className="w-full px-2.5 py-1.5 rounded-lg bg-slate-800 border border-white/10 text-white text-xs"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] text-slate-400 font-semibold block">
+                            Workouts Required
+                          </label>
+                          <input
+                            type="number"
+                            value={reward.reqWorkouts}
+                            onChange={(e) =>
+                              handleUpdateReward(idx, 'reqWorkouts', Number(e.target.value) || 0)
+                            }
+                            className="w-full px-2.5 py-1.5 rounded-lg bg-slate-800 border border-white/10 text-white text-xs"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div>
+                          <label className="text-[10px] text-slate-400 font-semibold block">
+                            Redemption Barcode / Promo Code
+                          </label>
+                          <input
+                            type="text"
+                            value={reward.code}
+                            onChange={(e) =>
+                              handleUpdateReward(idx, 'code', e.target.value.toUpperCase())
+                            }
+                            placeholder="FREE-SHAKE-5"
+                            className="w-full px-2.5 py-1.5 rounded-lg bg-slate-800 border border-white/10 text-white text-xs font-mono uppercase"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] text-slate-400 font-semibold block">
+                            Perk Icon Type
+                          </label>
+                          <select
+                            value={reward.icon}
+                            onChange={(e) =>
+                              handleUpdateReward(idx, 'icon', e.target.value as any)
+                            }
+                            className="w-full px-2.5 py-1.5 rounded-lg bg-slate-800 border border-white/10 text-white text-xs"
+                          >
+                            <option value="shake">Protein Shake</option>
+                            <option value="discount">Store Discount %</option>
+                            <option value="towel">Branded Merch / Towel</option>
+                            <option value="pt">1-on-1 PT Session</option>
+                            <option value="trophy">Trophy / Milestone</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="text-[10px] text-slate-400 font-semibold block">
+                          Redemption Description
+                        </label>
+                        <input
+                          type="text"
+                          value={reward.description}
+                          onChange={(e) => handleUpdateReward(idx, 'description', e.target.value)}
+                          placeholder="e.g. Redeem at front desk smoothie bar"
+                          className="w-full px-2.5 py-1.5 rounded-lg bg-slate-800 border border-white/10 text-white text-xs"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 6: Feature Toggles & Push Alert */}
+          {activeBuilderTab === 'settings' && (
+            <div className="space-y-4">
+              {/* Feature Toggles */}
+              <div className="p-5 rounded-3xl bg-slate-900/90 border border-white/10 shadow-xl space-y-3">
+                <div className="flex items-center gap-2 pb-2 border-b border-white/10">
+                  <CheckSquare className="w-4 h-4 text-emerald-400" />
+                  <div>
+                    <h3 className="text-sm font-bold text-white">Modular Feature Switches</h3>
+                    <p className="text-[11px] text-slate-400">
+                      Enable or disable features to match client package levels
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  {[
+                    {
+                      key: 'classBooking' as const,
+                      title: 'Live Class Booking & Slots',
+                      desc: '7-day schedule, capacity decrement & calendar sync',
+                    },
+                    {
+                      key: 'trainerScheduler' as const,
+                      title: 'Trainer 1-on-1 PT Scheduler',
+                      desc: 'Select 30m/60m session, time slot & price breakdown',
+                    },
+                    {
+                      key: 'loyaltyPunchCard' as const,
+                      title: 'Digital Loyalty & Streak Tracker',
+                      desc: 'Interactive attendance check-in stamp & confetti perks',
+                    },
+                    {
+                      key: 'pushNotification' as const,
+                      title: 'Simulated In-App Push Alert',
+                      desc: 'Smooth drop-down banner after 3.2 seconds',
+                    },
+                    {
+                      key: 'passPurchase' as const,
+                      title: 'Instant Pass & QR Turnstile Pass',
+                      desc: 'Interactive digital access pass with laser scan bar',
+                    },
+                  ].map((feat) => {
+                    const isEnabled = config.features[feat.key];
+                    return (
+                      <label
+                        key={feat.key}
+                        className={`flex items-start gap-3 p-3 rounded-2xl border transition cursor-pointer select-none ${
+                          isEnabled
+                            ? 'bg-slate-800/80 border-emerald-500/40'
+                            : 'bg-slate-900/40 border-white/5 opacity-60'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isEnabled}
+                          onChange={(e) =>
+                            setConfig({
+                              ...config,
+                              features: {
+                                ...config.features,
+                                [feat.key]: e.target.checked,
+                              },
+                            })
+                          }
+                          className="mt-0.5 w-4 h-4 rounded text-emerald-500 focus:ring-0 accent-emerald-500 cursor-pointer"
+                        />
+                        <div>
+                          <div className="text-xs font-bold text-white">{feat.title}</div>
+                          <div className="text-[10px] text-slate-400 leading-tight mt-0.5">
+                            {feat.desc}
+                          </div>
+                        </div>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Push Notification Copy */}
+              <div className="p-5 rounded-3xl bg-slate-900/90 border border-white/10 shadow-xl space-y-3">
+                <div className="flex items-center gap-2 pb-2 border-b border-white/10">
+                  <Bell className="w-4 h-4 text-amber-400" />
+                  <div>
+                    <h3 className="text-sm font-bold text-white">Push Notification Text</h3>
+                    <p className="text-[11px] text-slate-400">
+                      Appears on the simulated iPhone screen to impress prospects
+                    </p>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">
+                    Simulated Lock Screen Alert Copy
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={
+                      config.customPushMessage ||
+                      `🔥 ${config.name} Reminder: 2 spots left for 6:00 PM workout tonight! Tap to reserve.`
+                    }
+                    onChange={(e) =>
+                      setConfig({ ...config, customPushMessage: e.target.value })
+                    }
+                    className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-white/10 text-white text-xs focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* RIGHT COLUMN: Live Split-Screen Phone Preview */}
@@ -829,13 +1707,16 @@ function DemoBuilderContent() {
               Live Interactive Prototype
             </span>
             <span className="text-[11px] text-slate-400 font-mono">
-              Real-time updates
+              Auto-syncs to tab
             </span>
           </div>
 
-          {/* The Phone Chassis */}
+          {/* The Phone Chassis with active tab override */}
           <div className="relative">
-            <PhoneFrame config={config} />
+            <PhoneFrame
+              config={config}
+              activeTabOverride={phoneTabMapping[activeBuilderTab]}
+            />
           </div>
 
           <div className="mt-4 text-center w-full max-w-sm">

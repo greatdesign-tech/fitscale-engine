@@ -18,22 +18,36 @@ interface PhoneFrameProps {
   config: GymConfig;
   className?: string;
   allowPushTrigger?: boolean;
+  activeTabOverride?: ActivePhoneTab;
 }
 
 export const PhoneFrame: React.FC<PhoneFrameProps> = ({
   config,
   className = '',
   allowPushTrigger = true,
+  activeTabOverride,
 }) => {
-  const [activeTab, setActiveTab] = useState<ActivePhoneTab>('home');
+  const [activeTab, setActiveTab] = useState<ActivePhoneTab>(activeTabOverride || 'home');
   const [showPushNotification, setShowPushNotification] = useState(false);
   const [isPassModalOpen, setIsPassModalOpen] = useState(false);
   const [selectedBookingClass, setSelectedBookingClass] = useState<GymClass | null>(null);
   const [selectedTrainer, setSelectedTrainer] = useState<Trainer | null>(null);
   const [bookedClassIds, setBookedClassIds] = useState<string[]>([]);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [workoutStreak, setWorkoutStreak] = useState(14);
+  const [workoutStreak, setWorkoutStreak] = useState(config.rewardsConfig?.startingStreak ?? 14);
   const [currentTime, setCurrentTime] = useState('9:41');
+
+  useEffect(() => {
+    if (activeTabOverride) {
+      setActiveTab(activeTabOverride);
+    }
+  }, [activeTabOverride]);
+
+  useEffect(() => {
+    if (config.rewardsConfig?.startingStreak !== undefined) {
+      setWorkoutStreak(config.rewardsConfig.startingStreak);
+    }
+  }, [config.rewardsConfig?.startingStreak]);
 
   // Realistic time clock
   useEffect(() => {
@@ -71,7 +85,9 @@ export const PhoneFrame: React.FC<PhoneFrameProps> = ({
   // Class booking handler
   const handleConfirmClassBooking = (classId: string) => {
     setBookedClassIds((prev) => [...prev, classId]);
-    showToast("You're booked! Added to Apple Calendar ✓");
+    showToast(
+      config.scheduleConfig?.confirmationToast || "You're booked! Added to Apple Calendar ✓"
+    );
   };
 
   // PT booking handler

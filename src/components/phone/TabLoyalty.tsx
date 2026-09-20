@@ -57,7 +57,7 @@ export const TabLoyalty: React.FC<TabLoyaltyProps> = ({
     }, 1200);
   };
 
-  const totalMonthlyGoal = 20;
+  const totalMonthlyGoal = config.rewardsConfig?.monthlyGoal || 20;
   const currentWorkouts = streak + (isCheckedInToday ? 1 : 0);
   const progressPercent = Math.min(100, Math.round((currentWorkouts / totalMonthlyGoal) * 100));
 
@@ -65,8 +65,12 @@ export const TabLoyalty: React.FC<TabLoyaltyProps> = ({
     <div className="space-y-4 pb-16">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-base font-bold text-white">Member Rewards</h2>
-          <p className="text-[11px] text-slate-400">Punch card, streaks & member perks</p>
+          <h2 className="text-base font-bold text-white">
+            {config.rewardsConfig?.title || 'Member Rewards'}
+          </h2>
+          <p className="text-[11px] text-slate-400">
+            {config.rewardsConfig?.subtitle || 'Punch card, streaks & member perks'}
+          </p>
         </div>
         <span className="flex items-center gap-1 text-xs font-bold text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-full">
           <Flame className="w-3.5 h-3.5 fill-amber-400" /> {currentWorkouts} Streak
@@ -100,7 +104,7 @@ export const TabLoyalty: React.FC<TabLoyaltyProps> = ({
             className="text-[10px] font-bold px-2 py-0.5 rounded-full text-slate-950 uppercase"
             style={{ backgroundColor: config.primaryColor }}
           >
-            Tier 2 Athlete
+            {config.rewardsConfig?.tierBadge || 'Tier 2 Athlete'}
           </span>
         </div>
 
