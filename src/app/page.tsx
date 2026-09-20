@@ -4,6 +4,8 @@ import { PRESET_DEMOS } from '@/lib/defaultDemos';
 import {
   Sparkles,
   Smartphone,
+  Zap,
+  Users,
   ArrowRight,
   Calendar,
   Bell,
@@ -35,10 +37,18 @@ export default function HomePage() {
         <div className="flex items-center gap-2.5">
           <Link
             href="/demo/apex-fitness"
-            className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold transition shadow-md flex items-center gap-1.5"
+            className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition flex items-center gap-1.5 border border-white/5"
           >
-            <Smartphone className="w-3.5 h-3.5" />
+            <Smartphone className="w-3.5 h-3.5 text-emerald-400" />
             <span>Try Live Demo</span>
+          </Link>
+
+          <Link
+            href="/admin/builder"
+            className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-black transition shadow-md flex items-center gap-1.5 hover:brightness-105"
+          >
+            <Zap className="w-3.5 h-3.5 fill-slate-950" />
+            <span>Build Demo App</span>
           </Link>
         </div>
       </nav>
@@ -68,20 +78,29 @@ export default function HomePage() {
         {/* Action Buttons */}
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3.5">
           <Link
-            href="/demo/apex-fitness"
+            href="/admin/builder"
             className="px-7 py-3.5 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-sm flex items-center gap-2 transition shadow-xl hover:shadow-emerald-500/25 active:scale-98"
           >
-            <Smartphone className="w-4 h-4 fill-slate-950" />
-            <span>Launch Live Mobile Demo</span>
+            <Zap className="w-4 h-4 fill-slate-950" />
+            <span>Build a Gym Demo</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
 
-          <a
-            href="#demos"
+          <Link
+            href="/demo/apex-fitness"
             className="px-6 py-3.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm border border-white/10 flex items-center gap-2 transition"
           >
-            <span>Explore All Gym Concepts</span>
-          </a>
+            <Smartphone className="w-4 h-4 text-emerald-400" />
+            <span>Test Client Concept</span>
+          </Link>
+
+          <Link
+            href="/admin/leads"
+            className="px-5 py-3.5 rounded-2xl bg-slate-900/70 hover:bg-slate-800 text-slate-300 hover:text-white font-semibold text-sm border border-white/10 flex items-center gap-2 transition"
+          >
+            <Users className="w-4 h-4 text-amber-400" />
+            <span>Lead Finder</span>
+          </Link>
         </div>
 
         {/* Agency Metrics Banner */}
@@ -239,14 +258,17 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
           <span>FitScale Engine © 2026. Merged GymLead Finder + FitApp Demo Platform.</span>
           <div className="flex items-center gap-4 text-slate-400">
+            <Link href="/admin/builder" className="text-emerald-400 hover:underline font-semibold transition">
+              ⚡ Demo Builder
+            </Link>
+            <Link href="/admin/leads" className="hover:text-white transition">
+              Lead Finder
+            </Link>
             <Link href="/demo/apex-fitness" className="hover:text-white transition">
               Apex Concept
             </Link>
             <Link href="/demo/ironforge-crossfit" className="hover:text-white transition">
               CrossFit Concept
-            </Link>
-            <Link href="/demo/zenith-pilates" className="hover:text-white transition">
-              Pilates Concept
             </Link>
           </div>
         </div>
