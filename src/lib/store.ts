@@ -11,15 +11,27 @@ Object.entries(PRESET_DEMOS).forEach(([slug, config]) => {
   memoryCache.set(slug, config);
 });
 
+function sanitizeDemoConfig(cfg: GymConfig): GymConfig {
+  if (cfg.agencySettings) {
+    if (!cfg.agencySettings.repName || cfg.agencySettings.repName === 'Marcus Vance') {
+      cfg.agencySettings.repName = 'Taiwo Adediji';
+    }
+    if (!cfg.agencySettings.repEmail || cfg.agencySettings.repEmail === 'marcus@fitdigitalapps.io') {
+      cfg.agencySettings.repEmail = 'taiwo.adediji.apps@gmail.com';
+    }
+  }
+  return cfg;
+}
+
 export function getDemoBySlug(slug: string): GymConfig | null {
   // Check memory cache first
   if (memoryCache.has(slug)) {
-    return memoryCache.get(slug)!;
+    return sanitizeDemoConfig(memoryCache.get(slug)!);
   }
 
   // Check preset dictionary
   if (PRESET_DEMOS[slug]) {
-    return PRESET_DEMOS[slug];
+    return sanitizeDemoConfig(PRESET_DEMOS[slug]);
   }
 
   // Client-side localStorage fallback
@@ -30,8 +42,9 @@ export function getDemoBySlug(slug: string): GymConfig | null {
         const list: GymConfig[] = JSON.parse(saved);
         const found = list.find((item) => item.slug === slug);
         if (found) {
-          memoryCache.set(slug, found);
-          return found;
+          const sanitized = sanitizeDemoConfig(found);
+          memoryCache.set(slug, sanitized);
+          return sanitized;
         }
       }
     } catch (e) {
@@ -65,7 +78,7 @@ export function saveDemo(config: GymConfig): GymConfig {
 }
 
 export function getAllDemos(): GymConfig[] {
-  const all: GymConfig[] = Object.values(PRESET_DEMOS);
+  const all: GymConfig[] = Object.values(PRESET_DEMOS).map(sanitizeDemoConfig);
 
   if (typeof window !== 'undefined') {
     try {
@@ -73,9 +86,9 @@ export function getAllDemos(): GymConfig[] {
       if (saved) {
         const custom: GymConfig[] = JSON.parse(saved);
         // Combine without duplicates
-        const customFiltered = custom.filter(
-          (c) => !all.some((p) => p.slug === c.slug)
-        );
+        const customFiltered = custom
+          .filter((c) => !all.some((p) => p.slug === c.slug))
+          .map(sanitizeDemoConfig);
         return [...customFiltered, ...all];
       }
     } catch (e) {

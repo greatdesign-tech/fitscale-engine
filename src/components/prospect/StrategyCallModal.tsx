@@ -35,7 +35,26 @@ export const StrategyCallModal: React.FC<StrategyCallModalProps> = ({
   isOpen,
   onClose,
 }) => {
-  const rep = config.agencySettings;
+  const repSettings = config.agencySettings || {
+    agencyName: 'FitDigital Agency',
+    calBookingUrl: '',
+    repName: 'Taiwo Adediji',
+    repTitle: 'Head of Fitness Partnerships',
+    repEmail: 'taiwo.adediji.apps@gmail.com',
+    repPhone: '+1 (512) 843-9120',
+  };
+
+  const rep = {
+    ...repSettings,
+    repName:
+      !repSettings.repName || repSettings.repName === 'Marcus Vance'
+        ? 'Taiwo Adediji'
+        : repSettings.repName,
+    repEmail:
+      !repSettings.repEmail || repSettings.repEmail === 'marcus@fitdigitalapps.io'
+        ? 'taiwo.adediji.apps@gmail.com'
+        : repSettings.repEmail,
+  };
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [currentSoftware, setCurrentSoftware] = useState('No Mobile App Currently');

@@ -24,7 +24,35 @@ export const FloatingAgencyCta: React.FC<FloatingAgencyCtaProps> = ({
   config,
   onBookCall,
 }) => {
-  const rep = config.agencySettings;
+  const repSettings = config.agencySettings || {
+    agencyName: 'FitDigital Agency',
+    calBookingUrl: '',
+    repName: 'Taiwo Adediji',
+    repTitle: 'Head of Fitness Partnerships',
+    repEmail: 'taiwo.adediji.apps@gmail.com',
+    repPhone: '+1 (512) 843-9120',
+  };
+
+  const rep = {
+    ...repSettings,
+    repName:
+      !repSettings.repName || repSettings.repName === 'Marcus Vance'
+        ? 'Taiwo Adediji'
+        : repSettings.repName,
+    repEmail:
+      !repSettings.repEmail || repSettings.repEmail === 'marcus@fitdigitalapps.io'
+        ? 'taiwo.adediji.apps@gmail.com'
+        : repSettings.repEmail,
+  };
+
+  const repInitials =
+    rep.repName === 'Marcus Vance' || !rep.repName
+      ? 'TA'
+      : rep.repName
+          .split(' ')
+          .map((n) => n[0])
+          .join('')
+          .toUpperCase();
 
   return (
     <div className="w-full lg:w-[380px] shrink-0">
@@ -120,7 +148,7 @@ export const FloatingAgencyCta: React.FC<FloatingAgencyCtaProps> = ({
         <div className="mt-5 pt-4 border-t border-white/10 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-full bg-slate-800 border border-white/10 flex items-center justify-center font-bold text-xs text-white">
-              {rep.repName.split(' ').map((n) => n[0]).join('')}
+              {repInitials}
             </div>
             <div>
               <div className="text-xs font-bold text-white">{rep.repName}</div>
