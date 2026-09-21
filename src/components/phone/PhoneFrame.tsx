@@ -119,13 +119,40 @@ export const PhoneFrame: React.FC<PhoneFrameProps> = ({
         } as React.CSSProperties
       }
     >
-      {/* Phone Outer Screen Bezel Container */}
+      {/* Phone Screen Container */}
       <div
-        className={`overflow-hidden relative w-full h-full rounded-[42px] flex flex-col ${
+        className={`relative overflow-hidden rounded-[40px] w-full h-full ${
           config.isDarkMode ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'
         }`}
       >
-        {/* Simulated Push Notification Banner (strictly inside inner phone screen wrapper) */}
+        {/* a) Status Bar & Notch */}
+        <div className="sticky top-0 z-20 bg-slate-900/90 backdrop-blur-md px-6 pt-2.5 pb-2 select-none border-b border-white/[0.04] w-full">
+          {/* Dynamic Island / Top Notch Pill */}
+          <div className="absolute top-2 left-0 right-0 z-30 flex justify-center pointer-events-none">
+            <div className="w-28 h-5.5 bg-black rounded-full flex items-center justify-between px-2.5 shadow-md">
+              <div className="w-2 h-2 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center">
+                <div className="w-1 h-1 rounded-full bg-blue-500/60" />
+              </div>
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500/80 animate-pulse" />
+            </div>
+          </div>
+
+          {/* Status Bar Indicators */}
+          <div className="flex items-center justify-between text-xs font-semibold text-slate-300">
+            <span className="text-[12px] font-bold tracking-tight">{currentTime}</span>
+            <div className="flex items-center gap-1.5 text-slate-300">
+              <Signal className="w-3.5 h-3.5" />
+              <span className="text-[10px] font-bold">5G</span>
+              <Wifi className="w-3.5 h-3.5" />
+              <div className="flex items-center">
+                <span className="text-[10px] mr-0.5">98%</span>
+                <Battery className="w-4 h-4 fill-slate-200 text-slate-200" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* b) Notification Toast (Rendered OUTSIDE the scrollable element so it stays fixed to the phone screen top, not the browser window) */}
         <PushNotification
           config={config}
           isOpen={showPushNotification}
@@ -133,36 +160,8 @@ export const PhoneFrame: React.FC<PhoneFrameProps> = ({
           onTap={handleTapPushNotification}
         />
 
-        {/* Main Scrollable Screen Content */}
-        <div className="flex-1 overflow-y-auto pb-24 phone-screen-scroll relative">
-          {/* Top Status Bar (Sticky at top) */}
-          <div className="sticky top-0 z-20 bg-[#0B0F17]/90 backdrop-blur-md px-6 pt-2.5 pb-2 select-none border-b border-white/[0.04]">
-            {/* Dynamic Island / Top Notch Pill */}
-            <div className="absolute top-2 left-0 right-0 z-30 flex justify-center pointer-events-none">
-              <div className="w-28 h-5.5 bg-black rounded-full flex items-center justify-between px-2.5 shadow-md">
-                <div className="w-2 h-2 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center">
-                  <div className="w-1 h-1 rounded-full bg-blue-500/60" />
-                </div>
-                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500/80 animate-pulse" />
-              </div>
-            </div>
-
-            {/* Status Bar Indicators */}
-            <div className="flex items-center justify-between text-xs font-semibold text-slate-300">
-              <span className="text-[12px] font-bold tracking-tight">{currentTime}</span>
-              <div className="flex items-center gap-1.5 text-slate-300">
-                <Signal className="w-3.5 h-3.5" />
-                <span className="text-[10px] font-bold">5G</span>
-                <Wifi className="w-3.5 h-3.5" />
-                <div className="flex items-center">
-                  <span className="text-[10px] mr-0.5">98%</span>
-                  <Battery className="w-4 h-4 fill-slate-200 text-slate-200" />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="px-4 pt-3">
+        {/* c) Scrollable Body (This is the ONLY element with overflow-y-auto) */}
+        <div className="overflow-y-auto h-full pt-16 pb-20 px-4 phone-screen-scroll absolute inset-0">
           <AnimatePresence mode="wait">
             {activeTab === 'home' && (
               <motion.div
@@ -232,7 +231,6 @@ export const PhoneFrame: React.FC<PhoneFrameProps> = ({
               </motion.div>
             )}
           </AnimatePresence>
-          </div>
         </div>
 
         {/* Global Toast Message (iOS Style) */}
