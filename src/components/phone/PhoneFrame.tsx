@@ -125,6 +125,14 @@ export const PhoneFrame: React.FC<PhoneFrameProps> = ({
           config.isDarkMode ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'
         }`}
       >
+        {/* Simulated Push Notification Banner (strictly inside inner phone screen wrapper) */}
+        <PushNotification
+          config={config}
+          isOpen={showPushNotification}
+          onClose={() => setShowPushNotification(false)}
+          onTap={handleTapPushNotification}
+        />
+
         {/* Main Scrollable Screen Content */}
         <div className="flex-1 overflow-y-auto pb-24 phone-screen-scroll relative">
           {/* Top Status Bar (Sticky at top) */}
@@ -153,14 +161,6 @@ export const PhoneFrame: React.FC<PhoneFrameProps> = ({
               </div>
             </div>
           </div>
-
-          {/* Simulated Push Notification Banner */}
-          <PushNotification
-            config={config}
-            isOpen={showPushNotification}
-            onClose={() => setShowPushNotification(false)}
-            onTap={handleTapPushNotification}
-          />
 
           <div className="px-4 pt-3">
           <AnimatePresence mode="wait">
