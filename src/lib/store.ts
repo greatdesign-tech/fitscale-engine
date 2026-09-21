@@ -3,15 +3,10 @@ import { PRESET_DEMOS } from './defaultDemos';
 
 const STORAGE_KEY = 'fitapp_demos_custom_v1';
 
-// In-memory cache for fast SSR / API route retrieval
+// In-memory cache for fast retrieval
 const memoryCache: Map<string, GymConfig> = new Map();
 
-// Initialize memory cache with preset demos
-Object.entries(PRESET_DEMOS).forEach(([slug, config]) => {
-  memoryCache.set(slug, config);
-});
-
-function sanitizeDemoConfig(cfg: GymConfig): GymConfig {
+export function sanitizeDemoConfig(cfg: GymConfig): GymConfig {
   if (cfg.agencySettings) {
     if (!cfg.agencySettings.repName || cfg.agencySettings.repName === 'Marcus Vance') {
       cfg.agencySettings.repName = 'Taiwo Adediji';
@@ -24,17 +19,7 @@ function sanitizeDemoConfig(cfg: GymConfig): GymConfig {
 }
 
 export function getDemoBySlug(slug: string): GymConfig | null {
-  // Check memory cache first
-  if (memoryCache.has(slug)) {
-    return sanitizeDemoConfig(memoryCache.get(slug)!);
-  }
-
-  // Check preset dictionary
-  if (PRESET_DEMOS[slug]) {
-    return sanitizeDemoConfig(PRESET_DEMOS[slug]);
-  }
-
-  // Client-side localStorage fallback
+  // 1. Client-side localStorage MUST be checked FIRST so published edits always take precedence
   if (typeof window !== 'undefined') {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -52,49 +37,107 @@ export function getDemoBySlug(slug: string): GymConfig | null {
     }
   }
 
+  // 2. Check memory cache (e.g. from recent saves)
+  if (memoryCache.has(slug)) {
+    return sanitizeDemoConfig(memoryCache.get(slug)!);
+  }
+
+  // 3. Fallback to preset dictionary
+  if (PRESET_DEMOS[slug]) {
+    const preset = sanitizeDemoConfig(PRESET_DEMOS[slug]);
+    memoryCache.set(slug, preset);
+    return preset;
+  }
+
   return null;
 }
 
 export function saveDemo(config: GymConfig): GymConfig {
-  memoryCache.set(config.slug, config);
+  const sanitized = sanitizeDemoConfig(config);
+  memoryCache.set(sanitized.slug, sanitized);
 
   if (typeof window !== 'undefined') {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       let list: GymConfig[] = saved ? JSON.parse(saved) : [];
-      const index = list.findIndex((item) => item.slug === config.slug);
+      const index = list.findIndex((item) => item.slug === sanitized.slug);
       if (index >= 0) {
-        list[index] = config;
+        list[index] = sanitized;
       } else {
-        list.unshift(config);
+        list.unshift(sanitized);
       }
       localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
     } catch (e) {
       console.error('Error saving to localStorage', e);
     }
+
+    // Persist to server disk via API
+    fetch('/api/demos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(sanitized),
+    }).catch((err) => console.error('Server sync error', err));
   }
 
-  return config;
+  return sanitized;
+}
+
+export async function publishDemo(config: GymConfig): Promise<GymConfig> {
+  const sanitized = sanitizeDemoConfig(config);
+  memoryCache.set(sanitized.slug, sanitized);
+
+  if (typeof window !== 'undefined') {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      let list: GymConfig[] = saved ? JSON.parse(saved) : [];
+      const index = list.findIndex((item) => item.slug === sanitized.slug);
+      if (index >= 0) {
+        list[index] = sanitized;
+      } else {
+        list.unshift(sanitized);
+      }
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+    } catch (e) {
+      console.error('Error saving to localStorage', e);
+    }
+
+    // Await server persistence
+    try {
+      const res = await fetch('/api/demos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(sanitized),
+      });
+      const data = await res.json();
+      if (data.success && data.data) {
+        return sanitizeDemoConfig(data.data);
+      }
+    } catch (err) {
+      console.error('Server publish error', err);
+    }
+  }
+
+  return sanitized;
 }
 
 export function getAllDemos(): GymConfig[] {
-  const all: GymConfig[] = Object.values(PRESET_DEMOS).map(sanitizeDemoConfig);
+  let customList: GymConfig[] = [];
 
   if (typeof window !== 'undefined') {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
-        const custom: GymConfig[] = JSON.parse(saved);
-        // Combine without duplicates
-        const customFiltered = custom
-          .filter((c) => !all.some((p) => p.slug === c.slug))
-          .map(sanitizeDemoConfig);
-        return [...customFiltered, ...all];
+        customList = JSON.parse(saved).map(sanitizeDemoConfig);
       }
     } catch (e) {
       console.error('Error fetching demos', e);
     }
   }
 
-  return all;
+  // Presets that haven't been customized
+  const presetList: GymConfig[] = Object.values(PRESET_DEMOS)
+    .map(sanitizeDemoConfig)
+    .filter((preset) => !customList.some((c) => c.slug === preset.slug));
+
+  return [...customList, ...presetList];
 }

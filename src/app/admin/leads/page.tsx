@@ -93,6 +93,9 @@ export default function LeadFinderPage() {
       website: lead.website,
       studioType: lead.studioType,
     });
+    if (lead.demoSlug) {
+      params.set('edit', lead.demoSlug);
+    }
     router.push(`/admin/builder?${params.toString()}`);
   };
 

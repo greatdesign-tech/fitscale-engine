@@ -16,34 +16,50 @@ export default function DemoViewerPage() {
   const params = useParams();
   const slug = (params?.slug as string) || 'apex-fitness';
 
-  const [config, setConfig] = useState<GymConfig>(
-    PRESET_DEMOS[slug] || PRESET_DEMOS['apex-fitness']
-  );
+  const [config, setConfig] = useState<GymConfig>(() => {
+    const cached = typeof window !== 'undefined' ? getDemoBySlug(slug) : null;
+    return cached || PRESET_DEMOS[slug] || PRESET_DEMOS['apex-fitness'];
+  });
   const [pushTriggerKey, setPushTriggerKey] = useState(0);
   const [isQrOpen, setIsQrOpen] = useState(false);
   const [isStrategyModalOpen, setIsStrategyModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Try to load from store or API
+    // 1. Instant local load
     const found = getDemoBySlug(slug);
     if (found) {
       setConfig(found);
       setIsLoading(false);
-    } else {
-      // Fetch via API
-      fetch(`/api/demos/${slug}`)
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.success && data.data) {
-            setConfig(data.data);
-          }
-          setIsLoading(false);
-        })
-        .catch(() => {
-          setIsLoading(false);
-        });
     }
+
+    // 2. Always revalidate with server disk persistence
+    fetch(`/api/demos/${slug}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.data) {
+          setConfig(data.data);
+          // Sync to client local storage
+          try {
+            const STORAGE_KEY = 'fitapp_demos_custom_v1';
+            const saved = localStorage.getItem(STORAGE_KEY);
+            let list: GymConfig[] = saved ? JSON.parse(saved) : [];
+            const idx = list.findIndex((item) => item.slug === data.data.slug);
+            if (idx >= 0) {
+              list[idx] = data.data;
+            } else {
+              list.unshift(data.data);
+            }
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+          } catch (e) {
+            // Ignore storage sync err
+          }
+        }
+        setIsLoading(false);
+      })
+      .catch(() => {
+        setIsLoading(false);
+      });
   }, [slug]);
 
   const handleTriggerPush = () => {

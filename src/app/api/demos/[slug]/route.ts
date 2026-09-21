@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDemoBySlug } from '@/lib/store';
+import { getServerDemoBySlug } from '@/lib/serverStore';
 
 export async function GET(
   req: NextRequest,
@@ -7,7 +7,7 @@ export async function GET(
 ) {
   try {
     const { slug } = params;
-    const demo = getDemoBySlug(slug);
+    const demo = getServerDemoBySlug(slug);
 
     if (!demo) {
       return NextResponse.json(

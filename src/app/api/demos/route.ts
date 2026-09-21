@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAllDemos, saveDemo } from '@/lib/store';
+import { getAllServerDemos, saveServerDemo } from '@/lib/serverStore';
 import { GymConfig } from '@/types';
 
 export async function GET() {
   try {
-    const demos = getAllDemos();
+    const demos = getAllServerDemos();
     return NextResponse.json({ success: true, data: demos });
   } catch (error) {
     return NextResponse.json(
@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
-    const saved = saveDemo(body);
+    const saved = saveServerDemo(body);
     return NextResponse.json({ success: true, data: saved });
   } catch (error) {
     return NextResponse.json(

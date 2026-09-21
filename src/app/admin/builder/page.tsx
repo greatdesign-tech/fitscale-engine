@@ -4,7 +4,7 @@ import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { PRESET_DEMOS } from '@/lib/defaultDemos';
-import { saveDemo, getDemoBySlug } from '@/lib/store';
+import { saveDemo, getDemoBySlug, getAllDemos, publishDemo } from '@/lib/store';
 import { attachDemoToLead, getLeadById } from '@/lib/leadStore';
 import {
   GymConfig,
@@ -42,6 +42,7 @@ import {
   Tag,
   Dumbbell,
   Check,
+  RefreshCw,
 } from 'lucide-react';
 
 const PRESET_COLOR_SWATCHES = [
@@ -111,6 +112,10 @@ function DemoBuilderContent() {
 
   // Active gym configuration state
   const [config, setConfig] = useState<GymConfig>(() => {
+    if (typeof window !== 'undefined' && editSlug) {
+      const existing = getDemoBySlug(editSlug);
+      if (existing) return ensureConfigs(existing);
+    }
     if (editSlug && PRESET_DEMOS[editSlug]) {
       return ensureConfigs(PRESET_DEMOS[editSlug]);
     }
@@ -118,7 +123,7 @@ function DemoBuilderContent() {
   });
 
   const [activeBuilderTab, setActiveBuilderTab] = useState<BuilderTab>('brand');
-  const [activePresetKey, setActivePresetKey] = useState<string>('apex-fitness');
+  const [activePresetKey, setActivePresetKey] = useState<string>(editSlug || 'apex-fitness');
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [attachToLead, setAttachToLead] = useState<boolean>(!!leadId);
   const [attachedLead, setAttachedLead] = useState<GymLead | null>(null);
@@ -126,13 +131,41 @@ function DemoBuilderContent() {
   const [justAttachedSuccess, setJustAttachedSuccess] = useState(false);
   const [newCategoryInput, setNewCategoryInput] = useState('');
 
-  // Auto-fill from Lead Query Parameters (⚡ Create Demo App)
+  // Permanent Publishing States
+  const [isDirty, setIsDirty] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [publishFeedback, setPublishFeedback] = useState<string | null>(null);
+  const [availableDemos, setAvailableDemos] = useState<GymConfig[]>([]);
+
+  // Load all available demos on mount
+  useEffect(() => {
+    try {
+      const all = getAllDemos();
+      setAvailableDemos(all);
+    } catch (e) {
+      // Ignore
+    }
+  }, []);
+
+  // Auto-fill from Lead Query Parameters (⚡ Create Demo App) or editSlug
   useEffect(() => {
     if (leadId) {
       setAttachToLead(true);
       const lead = getLeadById(leadId);
       if (lead) {
         setAttachedLead(lead);
+      }
+
+      // Check if this lead already has a custom demo saved
+      const targetSlug = editSlug || (lead && lead.demoSlug);
+      if (targetSlug) {
+        const existing = getDemoBySlug(targetSlug);
+        if (existing) {
+          setConfig(ensureConfigs(existing));
+          setActivePresetKey(targetSlug);
+          setIsDirty(false);
+          return;
+        }
       }
 
       if (paramName) {
@@ -160,15 +193,92 @@ function DemoBuilderContent() {
             customPushMessage: `🔥 ${paramName} Reminder: 2 spots left for tonight's workout! Tap to reserve.`,
           })
         );
+        setIsDirty(true);
       }
     } else if (editSlug) {
       const existing = getDemoBySlug(editSlug);
       if (existing) {
         setConfig(ensureConfigs(existing));
         setActivePresetKey(editSlug);
+        setIsDirty(false);
       }
     }
   }, [leadId, paramName, paramCity, editSlug]);
+
+  // Publish Changes action: saves to localStorage, server disk (data/demos.json), and lead record
+  const handlePublishChanges = async () => {
+    setIsPublishing(true);
+    const finalSlug =
+      config.slug ||
+      config.name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)+/g, '') ||
+      'custom-gym-demo';
+
+    const updatedConfig = ensureConfigs({ ...config, slug: finalSlug });
+
+    // Save to local storage and sync to disk API
+    const saved = await publishDemo(updatedConfig);
+    setConfig(saved);
+
+    // Attach to Lead Record if enabled
+    if (attachToLead && leadId) {
+      const demoUrl = `/demo/${finalSlug}`;
+      attachDemoToLead(leadId, finalSlug, demoUrl);
+
+      fetch(`/api/leads/${leadId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ demoSlug: finalSlug, demoUrl }),
+      }).catch((err) => console.error('API patch error', err));
+
+      setJustAttachedSuccess(true);
+      setTimeout(() => setJustAttachedSuccess(false), 3000);
+    }
+
+    // Refresh demo lists
+    try {
+      setAvailableDemos(getAllDemos());
+    } catch (e) {
+      // Ignore
+    }
+
+    setIsDirty(false);
+    setIsPublishing(false);
+    setPublishFeedback(`✓ Changes published & permanent at /demo/${finalSlug}!`);
+    setTimeout(() => setPublishFeedback(null), 6000);
+  };
+
+  // Switch between existing gym demos
+  const handleSwitchApp = (selectedSlug: string) => {
+    const target = getDemoBySlug(selectedSlug);
+    if (target) {
+      setConfig(ensureConfigs(target));
+      setActivePresetKey(selectedSlug);
+      setIsDirty(false);
+      setPublishFeedback(null);
+    }
+  };
+
+  // Start fresh customized gym proposal
+  const handleStartNewDemo = () => {
+    const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+    const newSlug = `gym-prototype-${randomSuffix}`;
+    const base = ensureConfigs(PRESET_DEMOS['apex-fitness']);
+    const fresh: GymConfig = {
+      ...base,
+      name: 'Custom Gym Prototype',
+      slug: newSlug,
+      location: 'Austin, TX',
+      logoMonogram: 'GYM',
+      attachedLeadId: undefined,
+    };
+    setConfig(fresh);
+    setActivePresetKey('apex-fitness');
+    setIsDirty(true);
+    setPublishFeedback(null);
+  };
 
   // Handle 1-click Preset switch
   const handleLoadPreset = (key: string) => {
@@ -182,6 +292,7 @@ function DemoBuilderContent() {
         attachedLeadId: leadId || prev.attachedLeadId,
       }));
       setActivePresetKey(key);
+      setIsDirty(true);
     }
   };
 
@@ -204,6 +315,7 @@ function DemoBuilderContent() {
       slug: slug || 'custom-gym',
       logoMonogram: monogram || 'GYM',
     }));
+    setIsDirty(true);
   };
 
   // Section configs mutation helpers
@@ -215,6 +327,7 @@ function DemoBuilderContent() {
         [field]: value,
       },
     }));
+    setIsDirty(true);
   };
 
   const handleUpdateScheduleConfig = (field: keyof ScheduleSectionConfig, value: any) => {
@@ -225,6 +338,7 @@ function DemoBuilderContent() {
         [field]: value,
       },
     }));
+    setIsDirty(true);
   };
 
   const handleAddCategory = () => {
@@ -235,6 +349,7 @@ function DemoBuilderContent() {
       handleUpdateScheduleConfig('categories', [...currentCats, trimmed]);
     }
     setNewCategoryInput('');
+    setIsDirty(true);
   };
 
   const handleRemoveCategory = (catToRemove: string) => {
@@ -244,6 +359,7 @@ function DemoBuilderContent() {
       'categories',
       currentCats.filter((c) => c !== catToRemove)
     );
+    setIsDirty(true);
   };
 
   const handleUpdateTrainersConfig = (field: keyof TrainersSectionConfig, value: string) => {
@@ -254,6 +370,7 @@ function DemoBuilderContent() {
         [field]: value,
       },
     }));
+    setIsDirty(true);
   };
 
   const handleUpdateRewardsConfig = (field: keyof RewardsSectionConfig, value: any) => {
@@ -264,6 +381,7 @@ function DemoBuilderContent() {
         [field]: value,
       },
     }));
+    setIsDirty(true);
   };
 
   // Trainer list mutations
@@ -271,6 +389,7 @@ function DemoBuilderContent() {
     const updated = [...config.trainers];
     updated[index] = { ...updated[index], [field]: value };
     setConfig((prev) => ({ ...prev, trainers: updated }));
+    setIsDirty(true);
   };
 
   const handleAddTrainer = () => {
@@ -287,12 +406,14 @@ function DemoBuilderContent() {
       sessionsCompleted: 140,
     };
     setConfig((prev) => ({ ...prev, trainers: [...prev.trainers, newTrainer] }));
+    setIsDirty(true);
   };
 
   const handleRemoveTrainer = (index: number) => {
     if (config.trainers.length <= 1) return;
     const updated = config.trainers.filter((_, i) => i !== index);
     setConfig((prev) => ({ ...prev, trainers: updated }));
+    setIsDirty(true);
   };
 
   // Class schedule mutations
@@ -300,6 +421,7 @@ function DemoBuilderContent() {
     const updated = [...config.classes];
     updated[index] = { ...updated[index], [field]: value };
     setConfig((prev) => ({ ...prev, classes: updated }));
+    setIsDirty(true);
   };
 
   const handleAddClass = () => {
@@ -318,12 +440,14 @@ function DemoBuilderContent() {
       intensity: 'High',
     };
     setConfig((prev) => ({ ...prev, classes: [...prev.classes, newClass] }));
+    setIsDirty(true);
   };
 
   const handleRemoveClass = (index: number) => {
     if (config.classes.length <= 1) return;
     const updated = config.classes.filter((_, i) => i !== index);
     setConfig((prev) => ({ ...prev, classes: updated }));
+    setIsDirty(true);
   };
 
   // Reward vouchers mutations
@@ -331,6 +455,7 @@ function DemoBuilderContent() {
     const updated = [...config.rewards];
     updated[index] = { ...updated[index], [field]: value };
     setConfig((prev) => ({ ...prev, rewards: updated }));
+    setIsDirty(true);
   };
 
   const handleAddReward = () => {
@@ -345,50 +470,19 @@ function DemoBuilderContent() {
       icon: 'shake',
     };
     setConfig((prev) => ({ ...prev, rewards: [...prev.rewards, newReward] }));
+    setIsDirty(true);
   };
 
   const handleRemoveReward = (index: number) => {
     if (config.rewards.length <= 1) return;
     const updated = config.rewards.filter((_, i) => i !== index);
     setConfig((prev) => ({ ...prev, rewards: updated }));
+    setIsDirty(true);
   };
 
   // Generate demo link & attach to lead record
-  const handleGenerateLink = () => {
-    const finalSlug =
-      config.slug ||
-      config.name
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)+/g, '') ||
-      'prospect-demo';
-
-    const updatedConfig = { ...config, slug: finalSlug };
-    saveDemo(updatedConfig);
-    setConfig(updatedConfig);
-
-    // Save to server API
-    fetch('/api/demos', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updatedConfig),
-    }).catch((err) => console.error('API save error', err));
-
-    // Attach to Lead Record if enabled
-    if (attachToLead && leadId) {
-      const demoUrl = `/demo/${finalSlug}`;
-      attachDemoToLead(leadId, finalSlug, demoUrl);
-
-      fetch(`/api/leads/${leadId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ demoSlug: finalSlug, demoUrl }),
-      }).catch((err) => console.error('API patch error', err));
-
-      setJustAttachedSuccess(true);
-      setTimeout(() => setJustAttachedSuccess(false), 3000);
-    }
-
+  const handleGenerateLink = async () => {
+    await handlePublishChanges();
     setIsShareModalOpen(true);
   };
 
@@ -449,26 +543,110 @@ function DemoBuilderContent() {
           </button>
         </div>
 
-        {/* Action Button: Generate Demo Link */}
-        <div className="flex items-center gap-2">
+        {/* Action Buttons: Publish Changes + Live View + Proposal Pitch */}
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Status Indicator */}
+          {isDirty ? (
+            <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20 text-xs font-bold animate-pulse">
+              <span className="w-2 h-2 rounded-full bg-amber-400" />
+              <span>Unsaved Edits</span>
+            </span>
+          ) : (
+            <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-bold">
+              <Check className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Published ✓</span>
+            </span>
+          )}
+
+          {/* Primary "Publish Changes" Button */}
+          <button
+            onClick={handlePublishChanges}
+            disabled={isPublishing}
+            className={`px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition shadow-xl active:scale-95 ${
+              isPublishing
+                ? 'bg-slate-700 text-slate-300 cursor-wait'
+                : 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 ring-2 ring-emerald-400/40 shadow-emerald-950/50'
+            }`}
+          >
+            {isPublishing ? (
+              <>
+                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                <span>Publishing App...</span>
+              </>
+            ) : (
+              <>
+                <CheckCircle2 className="w-4 h-4" />
+                <span>Publish Changes</span>
+              </>
+            )}
+          </button>
+
+          {/* Live Prospect View */}
           <Link
             href={`/demo/${config.slug}`}
             target="_blank"
             className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-white/10 transition"
           >
-            <span>Live Prospect View</span>
+            <span>Live App View</span>
             <ExternalLink className="w-3.5 h-3.5" />
           </Link>
 
+          {/* Generate / Email Proposal Modal */}
           <button
             onClick={handleGenerateLink}
-            className="px-4 py-2 rounded-xl text-xs font-black text-slate-950 flex items-center gap-2 transition shadow-lg hover:brightness-105 active:scale-98"
-            style={{ backgroundColor: config.primaryColor }}
+            className="px-3 py-2 rounded-xl text-xs font-bold text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 flex items-center gap-1.5 transition border border-white/10"
           >
-            <Share2 className="w-4 h-4" />
-            <span>Generate Prospect Demo Link</span>
+            <Share2 className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Email Proposal Pitch</span>
           </button>
         </div>
+      </div>
+
+      {/* Published Success Banner */}
+      {publishFeedback && (
+        <div className="p-3.5 rounded-2xl bg-gradient-to-r from-emerald-950/80 to-slate-900 border border-emerald-500/40 text-emerald-300 text-xs font-bold flex flex-wrap items-center justify-between gap-3 shadow-xl">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+            <span>{publishFeedback}</span>
+          </div>
+          <Link
+            href={`/demo/${config.slug}`}
+            target="_blank"
+            className="flex items-center gap-1 text-xs text-white bg-emerald-500/20 px-3 py-1.5 rounded-xl border border-emerald-500/30 hover:bg-emerald-500/30 transition"
+          >
+            <span>View Live /demo/{config.slug}</span>
+            <ExternalLink className="w-3 h-3" />
+          </Link>
+        </div>
+      )}
+
+      {/* Active Prototype Switcher Bar */}
+      <div className="p-3 sm:p-3.5 rounded-2xl bg-slate-900/90 border border-white/10 flex flex-wrap items-center justify-between gap-3 shadow-md">
+        <div className="flex items-center gap-2.5">
+          <span className="text-slate-400 uppercase tracking-wider text-[10px] font-bold">
+            Active Prototype:
+          </span>
+          <select
+            value={config.slug}
+            onChange={(e) => handleSwitchApp(e.target.value)}
+            className="px-3 py-1.5 rounded-xl bg-slate-800 border border-white/10 text-white text-xs font-bold focus:outline-none focus:border-emerald-500 cursor-pointer"
+          >
+            {availableDemos.map((d) => (
+              <option key={d.slug} value={d.slug}>
+                {d.name} (/demo/{d.slug})
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <button
+          type="button"
+          onClick={handleStartNewDemo}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-white/10 transition hover:border-emerald-500/40"
+        >
+          <Plus className="w-3.5 h-3.5 text-emerald-400" />
+          <span>+ Build New Gym Proposal</span>
+        </button>
       </div>
 
       {/* Lead Integration Banner */}
@@ -625,7 +803,10 @@ function DemoBuilderContent() {
                     <input
                       type="text"
                       value={config.location}
-                      onChange={(e) => setConfig({ ...config, location: e.target.value })}
+                      onChange={(e) => {
+                        setConfig({ ...config, location: e.target.value });
+                        setIsDirty(true);
+                      }}
                       placeholder="e.g. Austin, TX (Downtown)"
                       className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-white/10 text-white text-xs focus:outline-none focus:border-emerald-500"
                     />
@@ -637,12 +818,13 @@ function DemoBuilderContent() {
                     </label>
                     <select
                       value={config.industryType}
-                      onChange={(e) =>
+                      onChange={(e) => {
                         setConfig({
                           ...config,
                           industryType: e.target.value as any,
-                        })
-                      }
+                        });
+                        setIsDirty(true);
+                      }}
                       className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-white/10 text-white text-xs focus:outline-none focus:border-emerald-500"
                     >
                       <option value="Athletic Club">Athletic Club</option>
@@ -661,9 +843,10 @@ function DemoBuilderContent() {
                         type="text"
                         maxLength={6}
                         value={config.logoMonogram || ''}
-                        onChange={(e) =>
-                          setConfig({ ...config, logoMonogram: e.target.value.toUpperCase() })
-                        }
+                        onChange={(e) => {
+                          setConfig({ ...config, logoMonogram: e.target.value.toUpperCase() });
+                          setIsDirty(true);
+                        }}
                         placeholder="APEX"
                         className="w-24 px-3 py-2 rounded-xl bg-slate-800 border border-white/10 text-white text-xs font-mono font-bold uppercase focus:outline-none focus:border-emerald-500"
                       />
@@ -682,7 +865,10 @@ function DemoBuilderContent() {
                       <input
                         type="text"
                         value={config.slug}
-                        onChange={(e) => setConfig({ ...config, slug: e.target.value })}
+                        onChange={(e) => {
+                          setConfig({ ...config, slug: e.target.value });
+                          setIsDirty(true);
+                        }}
                         className="flex-1 bg-transparent text-white outline-none"
                       />
                     </div>
@@ -700,7 +886,10 @@ function DemoBuilderContent() {
                       <button
                         key={swatch.hex}
                         type="button"
-                        onClick={() => setConfig({ ...config, primaryColor: swatch.hex })}
+                        onClick={() => {
+                          setConfig({ ...config, primaryColor: swatch.hex });
+                          setIsDirty(true);
+                        }}
                         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border transition ${
                           config.primaryColor.toLowerCase() === swatch.hex.toLowerCase()
                             ? 'border-white bg-slate-800 ring-2 ring-white/30 text-white'
@@ -719,7 +908,10 @@ function DemoBuilderContent() {
                       <input
                         type="color"
                         value={config.primaryColor}
-                        onChange={(e) => setConfig({ ...config, primaryColor: e.target.value })}
+                        onChange={(e) => {
+                          setConfig({ ...config, primaryColor: e.target.value });
+                          setIsDirty(true);
+                        }}
                         className="w-6 h-6 rounded cursor-pointer bg-transparent border-0"
                       />
                       <span className="text-xs font-mono text-slate-300">
@@ -740,7 +932,10 @@ function DemoBuilderContent() {
                     <div className="flex items-center p-1 bg-slate-900 rounded-xl border border-white/10">
                       <button
                         type="button"
-                        onClick={() => setConfig({ ...config, isDarkMode: true })}
+                        onClick={() => {
+                          setConfig({ ...config, isDarkMode: true });
+                          setIsDirty(true);
+                        }}
                         className={`px-3 py-1 text-xs font-bold rounded-lg transition ${
                           config.isDarkMode ? 'bg-slate-700 text-white' : 'text-slate-400'
                         }`}
@@ -749,7 +944,10 @@ function DemoBuilderContent() {
                       </button>
                       <button
                         type="button"
-                        onClick={() => setConfig({ ...config, isDarkMode: false })}
+                        onClick={() => {
+                          setConfig({ ...config, isDarkMode: false });
+                          setIsDirty(true);
+                        }}
                         className={`px-3 py-1 text-xs font-bold rounded-lg transition ${
                           !config.isDarkMode ? 'bg-white text-slate-950 font-bold' : 'text-slate-400'
                         }`}
@@ -1639,15 +1837,16 @@ function DemoBuilderContent() {
                         <input
                           type="checkbox"
                           checked={isEnabled}
-                          onChange={(e) =>
+                          onChange={(e) => {
                             setConfig({
                               ...config,
                               features: {
                                 ...config.features,
                                 [feat.key]: e.target.checked,
                               },
-                            })
-                          }
+                            });
+                            setIsDirty(true);
+                          }}
                           className="mt-0.5 w-4 h-4 rounded text-emerald-500 focus:ring-0 accent-emerald-500 cursor-pointer"
                         />
                         <div>
@@ -1684,9 +1883,10 @@ function DemoBuilderContent() {
                       config.customPushMessage ||
                       `🔥 ${config.name} Reminder: 2 spots left for 6:00 PM workout tonight! Tap to reserve.`
                     }
-                    onChange={(e) =>
-                      setConfig({ ...config, customPushMessage: e.target.value })
-                    }
+                    onChange={(e) => {
+                      setConfig({ ...config, customPushMessage: e.target.value });
+                      setIsDirty(true);
+                    }}
                     className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-white/10 text-white text-xs focus:outline-none focus:border-emerald-500"
                   />
                 </div>
@@ -1719,14 +1919,33 @@ function DemoBuilderContent() {
             />
           </div>
 
-          <div className="mt-4 text-center w-full max-w-sm">
+          <div className="mt-4 text-center w-full max-w-sm space-y-2">
+            <button
+              onClick={handlePublishChanges}
+              disabled={isPublishing}
+              className={`w-full py-3 px-4 rounded-2xl font-black text-xs text-slate-950 flex items-center justify-center gap-2 shadow-xl hover:brightness-105 transition active:scale-98 ${
+                isPublishing ? 'bg-slate-700 text-slate-300 cursor-wait' : 'bg-emerald-400 hover:bg-emerald-300'
+              }`}
+            >
+              {isPublishing ? (
+                <>
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                  <span>Publishing Changes...</span>
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>Publish Changes to Live App</span>
+                </>
+              )}
+            </button>
+
             <button
               onClick={handleGenerateLink}
-              className="w-full py-3.5 px-4 rounded-2xl font-black text-xs text-slate-950 flex items-center justify-center gap-2 shadow-xl hover:brightness-105 transition active:scale-98"
-              style={{ backgroundColor: config.primaryColor }}
+              className="w-full py-2.5 px-4 rounded-xl font-bold text-xs text-slate-300 bg-slate-800 hover:bg-slate-700 flex items-center justify-center gap-2 border border-white/10 transition"
             >
-              <Share2 className="w-4 h-4" />
-              <span>Generate Prospect Demo Link (/demo/{config.slug})</span>
+              <Share2 className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Email Proposal Pitch & QR (/demo/{config.slug})</span>
             </button>
 
             {justAttachedSuccess && (

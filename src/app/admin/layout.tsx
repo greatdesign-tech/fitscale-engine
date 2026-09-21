@@ -18,6 +18,7 @@ import {
   Home,
 } from 'lucide-react';
 import { getAllLeads } from '@/lib/leadStore';
+import { getAllDemos } from '@/lib/store';
 
 export default function AdminSidebarLayout({
   children,
@@ -27,6 +28,12 @@ export default function AdminSidebarLayout({
   const pathname = usePathname();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [leadStats, setLeadStats] = useState({ total: 9, noApp: 5, demoReady: 4 });
+  const [activeDemos, setActiveDemos] = useState<{ name: string; slug: string; city?: string }[]>([
+    { name: 'Apex Athletic Club', slug: 'apex-fitness', city: 'Austin, TX' },
+    { name: 'IronForge CrossFit', slug: 'ironforge-crossfit', city: 'Denver, CO' },
+    { name: 'Zenith Pilates', slug: 'zenith-pilates', city: 'Santa Monica, CA' },
+    { name: 'Rumble Boxing Lab', slug: 'rumble-boxing', city: 'Miami, FL' },
+  ]);
 
   useEffect(() => {
     try {
@@ -34,6 +41,11 @@ export default function AdminSidebarLayout({
       const noApp = leads.filter((l) => l.appStatus !== 'demo_ready').length;
       const demoReady = leads.filter((l) => l.appStatus === 'demo_ready').length;
       setLeadStats({ total: leads.length, noApp, demoReady });
+
+      const all = getAllDemos();
+      if (all.length > 0) {
+        setActiveDemos(all.map((d) => ({ name: d.name, slug: d.slug, city: d.location })));
+      }
     } catch (e) {
       // Fallback stats
     }
@@ -150,12 +162,7 @@ export default function AdminSidebarLayout({
               <span className="text-emerald-400">{leadStats.demoReady} Live</span>
             </div>
 
-            {[
-              { name: 'Apex Athletic Club', slug: 'apex-fitness', city: 'Austin, TX' },
-              { name: 'IronForge CrossFit', slug: 'ironforge-crossfit', city: 'Denver, CO' },
-              { name: 'Zenith Pilates', slug: 'zenith-pilates', city: 'Santa Monica, CA' },
-              { name: 'Rumble Boxing Lab', slug: 'rumble-boxing', city: 'Miami, FL' },
-            ].map((d) => (
+            {activeDemos.slice(0, 6).map((d) => (
               <Link
                 key={d.slug}
                 href={`/demo/${d.slug}`}
