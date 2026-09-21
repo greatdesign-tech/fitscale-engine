@@ -70,7 +70,7 @@ export const TabHome: React.FC<TabHomeProps> = ({
       <div className="grid grid-cols-3 gap-2">
         <button
           onClick={() => onNavigateTab('schedule')}
-          className="flex flex-col items-center justify-center p-3 rounded-2xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700/50 transition group text-center"
+          className="flex flex-col items-center justify-center p-3 rounded-2xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700/50 active:scale-95 transition-transform duration-150 group text-center cursor-pointer"
         >
           <div
             className="w-9 h-9 rounded-xl flex items-center justify-center mb-1.5 shadow-sm group-hover:scale-105 transition text-slate-950"
@@ -86,7 +86,7 @@ export const TabHome: React.FC<TabHomeProps> = ({
 
         <button
           onClick={onOpenPass}
-          className="flex flex-col items-center justify-center p-3 rounded-2xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700/50 transition group text-center relative overflow-hidden"
+          className="flex flex-col items-center justify-center p-3 rounded-2xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700/50 active:scale-95 transition-transform duration-150 group text-center relative overflow-hidden cursor-pointer"
         >
           <div className="w-9 h-9 rounded-xl bg-slate-700/80 text-white flex items-center justify-center mb-1.5 shadow-sm group-hover:scale-105 transition">
             <QrCode className="w-4 h-4 text-emerald-400" />
@@ -99,7 +99,7 @@ export const TabHome: React.FC<TabHomeProps> = ({
 
         <button
           onClick={() => onNavigateTab('rewards')}
-          className="flex flex-col items-center justify-center p-3 rounded-2xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700/50 transition group text-center"
+          className="flex flex-col items-center justify-center p-3 rounded-2xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700/50 active:scale-95 transition-transform duration-150 group text-center cursor-pointer"
         >
           <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center mb-1.5 shadow-sm group-hover:scale-105 transition">
             <Flame className="w-4 h-4 fill-amber-400 text-amber-400" />
