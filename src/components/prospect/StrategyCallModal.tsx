@@ -263,16 +263,6 @@ export const StrategyCallModal: React.FC<StrategyCallModalProps> = ({
                     )}
                   </button>
                 </form>
-
-                <div className="mt-3 text-center">
-                  <a
-                    href={directMailtoUrl}
-                    className="text-[11px] text-slate-400 hover:text-white underline underline-offset-2 transition inline-flex items-center gap-1"
-                  >
-                    <Mail className="w-3 h-3 text-emerald-400" />
-                    <span>Prefer to send a direct email now? Click here to email {rep.repEmail}</span>
-                  </a>
-                </div>
               </div>
             ) : (
               <div className="py-6 text-center space-y-4">
