@@ -30,7 +30,7 @@ export const TabHome: React.FC<TabHomeProps> = ({
   onSelectClass,
   workoutStreak,
 }) => {
-  const featuredClass = config.classes[0] || null;
+  const featuredClass = (config?.classes && config.classes.length > 0) ? config.classes[0] : null;
 
   return (
     <div className="space-y-4 pb-16">

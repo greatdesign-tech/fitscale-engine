@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { PRESET_DEMOS } from '@/lib/defaultDemos';
+import { PRESET_DEMOS, ensureGymConfig } from '@/lib/defaultDemos';
 import { getDemoBySlug, saveDemo } from '@/lib/store';
 import { decodeDemoConfig } from '@/lib/demoUrlEncoder';
 import { GymConfig } from '@/types';
@@ -18,85 +18,86 @@ export default function DemoViewerPage() {
   const params = useParams();
   const slug = (params?.slug as string) || 'apex-fitness';
 
+  const [mounted, setMounted] = useState(false);
   const [config, setConfig] = useState<GymConfig | null>(() => {
-    if (typeof window !== 'undefined') {
-      // 1. Check if full configuration payload is embedded in URL (?c=...)
-      const urlParams = new URLSearchParams(window.location.search);
-      const payload = urlParams.get('c');
-      if (payload) {
-        const decoded = decodeDemoConfig(payload);
-        if (decoded) return decoded;
-      }
-
-      // 2. Check client-side localStorage
-      const cached = getDemoBySlug(slug);
-      if (cached) return cached;
-    }
-
-    // 3. Fallback to preset dictionary ONLY if slug matches a standard preset
+    // Only use static presets on initial render to guarantee SSR/Client match
     if (PRESET_DEMOS[slug]) {
-      return PRESET_DEMOS[slug];
+      return ensureGymConfig(PRESET_DEMOS[slug]);
     }
-
-    // Never default to apex-fitness if custom slug is specified!
     return null;
   });
 
   const [pushTriggerKey, setPushTriggerKey] = useState(0);
   const [isQrOpen, setIsQrOpen] = useState(false);
   const [isStrategyModalOpen, setIsStrategyModalOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(!config);
+  const [isLoading, setIsLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
+
     // 1. Check URL payload (?c=...)
-    if (typeof window !== 'undefined') {
-      const urlParams = new URLSearchParams(window.location.search);
-      const payload = urlParams.get('c');
-      if (payload) {
-        const decoded = decodeDemoConfig(payload);
-        if (decoded) {
-          setConfig(decoded);
-          setIsLoading(false);
-          setNotFound(false);
-          // Save to this browser's local storage & sync to server API
-          saveDemo(decoded);
-          return;
+    try {
+      if (typeof window !== 'undefined') {
+        const urlParams = new URLSearchParams(window.location.search);
+        const payload = urlParams.get('c');
+        if (payload) {
+          const decoded = decodeDemoConfig(payload);
+          if (decoded) {
+            const safe = ensureGymConfig(decoded);
+            setConfig(safe);
+            setIsLoading(false);
+            setNotFound(false);
+            // Save to this browser's local storage & sync to server API
+            saveDemo(safe);
+            return;
+          }
         }
       }
+    } catch (err) {
+      console.warn('Could not decode URL payload', err);
     }
 
     // 2. Check local storage
-    const local = getDemoBySlug(slug);
-    if (local) {
-      setConfig(local);
-      setIsLoading(false);
-      setNotFound(false);
-    } else if (PRESET_DEMOS[slug]) {
-      setConfig(PRESET_DEMOS[slug]);
-      setIsLoading(false);
-      setNotFound(false);
+    try {
+      const local = getDemoBySlug(slug);
+      if (local) {
+        const safe = ensureGymConfig(local);
+        setConfig(safe);
+        setIsLoading(false);
+        setNotFound(false);
+        return;
+      }
+    } catch (err) {
+      console.warn('Could not read demo from local storage', err);
     }
 
-    // 3. Fetch from server API
+    // 3. Fallback to preset dictionary if slug matches
+    if (PRESET_DEMOS[slug]) {
+      setConfig(ensureGymConfig(PRESET_DEMOS[slug]));
+      setIsLoading(false);
+      setNotFound(false);
+      return;
+    }
+
+    // 4. Fetch from server API
     fetch(`/api/demos/${slug}`)
       .then((res) => res.json())
       .then((data) => {
         if (data.success && data.data) {
-          setConfig(data.data);
-          saveDemo(data.data);
+          const safe = ensureGymConfig(data.data);
+          setConfig(safe);
+          saveDemo(safe);
           setIsLoading(false);
           setNotFound(false);
-        } else if (!local && !PRESET_DEMOS[slug]) {
+        } else {
           setIsLoading(false);
           setNotFound(true);
         }
       })
       .catch(() => {
-        if (!local && !PRESET_DEMOS[slug]) {
-          setIsLoading(false);
-          setNotFound(true);
-        }
+        setIsLoading(false);
+        setNotFound(true);
       });
   }, [slug]);
 
@@ -104,9 +105,9 @@ export default function DemoViewerPage() {
     setPushTriggerKey((prev) => prev + 1);
   };
 
-  // Loading state (prevents flashing wrong gym preset)
-  if (isLoading || !config) {
-    if (notFound) {
+  // Loading state (prevents hydration mismatch and flashing)
+  if (!mounted || isLoading || !config) {
+    if (mounted && notFound) {
       return (
         <div className="min-h-screen bg-slate-950 text-white flex flex-col items-center justify-center p-6 text-center max-w-md mx-auto selection:bg-emerald-500">
           <div className="w-14 h-14 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center mb-4 shadow-lg border border-amber-500/30">

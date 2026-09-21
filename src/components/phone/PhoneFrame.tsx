@@ -66,14 +66,14 @@ export const PhoneFrame: React.FC<PhoneFrameProps> = ({
 
   // Drop down push notification after 3.2 seconds
   useEffect(() => {
-    if (!allowPushTrigger || !config.features.pushNotification) return;
+    if (!allowPushTrigger || !config?.features?.pushNotification) return;
 
     const timer = setTimeout(() => {
       setShowPushNotification(true);
     }, 3200);
 
     return () => clearTimeout(timer);
-  }, [allowPushTrigger, config.features.pushNotification, config.slug]);
+  }, [allowPushTrigger, config?.features?.pushNotification, config?.slug]);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);

@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { GymConfig } from '@/types';
-import { PRESET_DEMOS } from './defaultDemos';
+import { PRESET_DEMOS, ensureGymConfig } from './defaultDemos';
 
 // Global memory cache to prevent loss across warm serverless invocations
 const globalForDemos = globalThis as unknown as {
@@ -15,15 +15,7 @@ const PRIMARY_FILE = path.join(PRIMARY_DATA_DIR, 'demos.json');
 const TMP_FILE = path.join('/tmp', 'fitscale-demos.json');
 
 function sanitizeDemoConfig(cfg: GymConfig): GymConfig {
-  if (cfg.agencySettings) {
-    if (!cfg.agencySettings.repName || cfg.agencySettings.repName === 'Marcus Vance') {
-      cfg.agencySettings.repName = 'Taiwo Adediji';
-    }
-    if (!cfg.agencySettings.repEmail || cfg.agencySettings.repEmail === 'marcus@fitdigitalapps.io') {
-      cfg.agencySettings.repEmail = 'taiwo.adediji.apps@gmail.com';
-    }
-  }
-  return cfg;
+  return ensureGymConfig(cfg);
 }
 
 function readFromPath(filePath: string): Record<string, GymConfig> {

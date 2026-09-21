@@ -1,33 +1,147 @@
 {
   "korrect-fitness": {
-    "name": "Korrect Fitness",
+    "id": "demo-korrect",
     "slug": "korrect-fitness",
+    "name": "Korrect Fitness",
+    "tagline": "Precision Functional Training & Performance",
     "location": "Austin, TX",
     "primaryColor": "#F97316",
+    "secondaryColor": "#EA580C",
+    "isDarkMode": true,
     "logoMonogram": "KF",
+    "industryType": "Athletic Club",
+    "customPushMessage": "🔥 Korrect Alert: 2 slots open for 6:30 PM High-Intensity Core tonight!",
+    "agencySettings": {
+      "agencyName": "FitDigital Agency",
+      "calBookingUrl": "",
+      "repName": "Taiwo Adediji",
+      "repTitle": "Head of Fitness Partnerships",
+      "repEmail": "taiwo.adediji.apps@gmail.com",
+      "repPhone": "+1 (512) 843-9120"
+    },
+    "features": {
+      "classBooking": true,
+      "trainerScheduler": true,
+      "loyaltyPunchCard": true,
+      "pushNotification": true,
+      "passPurchase": true
+    },
     "homeConfig": {
-      "greeting": "Welcome to Korrect Fitness!",
+      "greeting": "Welcome back to Korrect Fitness!",
       "memberBadge": "Gold VIP",
-      "membershipCardTitle": "Monthly Pass"
+      "membershipCardTitle": "All-Access Performance Pass",
+      "quickAction1Label": "Book Class",
+      "quickAction2Label": "Scan Pass",
+      "quickAction3Label": "Streak",
+      "featuredClassBadge": "Up Next Today"
     },
     "scheduleConfig": {
-      "title": "Korrect Classes",
-      "subtitle": "Book your workout",
+      "title": "Live Class Schedule",
+      "subtitle": "Book your workout slot in real time",
       "categories": [
         "All",
-        "HIIT"
-      ]
+        "HIIT",
+        "Strength",
+        "Yoga",
+        "Boxing"
+      ],
+      "confirmationToast": "You're booked! Added to Apple Calendar ✓"
     },
     "trainersConfig": {
-      "title": "Korrect Coaches",
-      "subtitle": "Meet our team"
+      "title": "Coaches & Trainers",
+      "subtitle": "1-on-1 private coaching & performance assessments"
     },
     "rewardsConfig": {
-      "title": "Korrect Rewards",
-      "subtitle": "Earn perks"
+      "title": "Member Rewards",
+      "subtitle": "Punch card, streaks & member perks",
+      "tierBadge": "Tier 2 Athlete",
+      "monthlyGoal": 20,
+      "startingStreak": 14
     },
-    "trainers": [],
-    "classes": [],
-    "rewards": []
+    "trainers": [
+      {
+        "id": "t-kf-1",
+        "name": "Marcus Bell",
+        "role": "Head Performance Coach",
+        "specialty": "Olympic Weightlifting & MetCon",
+        "rating": 4.9,
+        "reviewCount": 78,
+        "hourlyRate": 85,
+        "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+        "bio": "Former collegiate strength coach specializing in explosive power and athletic conditioning."
+      },
+      {
+        "id": "t-kf-2",
+        "name": "Elena Rostova",
+        "role": "Conditioning Specialist",
+        "specialty": "High-Volume HIIT & Kettlebell Flow",
+        "rating": 4.8,
+        "reviewCount": 92,
+        "hourlyRate": 75,
+        "avatarUrl": "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80",
+        "bio": "Certified strength and conditioning specialist focused on anaerobic threshold and core stability."
+      }
+    ],
+    "classes": [
+      {
+        "id": "c-kf-1",
+        "name": "Korrect MetCon Burn",
+        "time": "6:00 AM",
+        "duration": "50m",
+        "instructor": "Marcus Bell",
+        "room": "Main Arena",
+        "category": "HIIT",
+        "spotsLeft": 3,
+        "totalSpots": 20,
+        "day": "Mon",
+        "intensity": "High"
+      },
+      {
+        "id": "c-kf-2",
+        "name": "Barbell Strength & Hypertrophy",
+        "time": "12:00 PM",
+        "duration": "60m",
+        "instructor": "Elena Rostova",
+        "room": "Iron Rig",
+        "category": "Strength",
+        "spotsLeft": 5,
+        "totalSpots": 16,
+        "day": "Mon",
+        "intensity": "High"
+      },
+      {
+        "id": "c-kf-3",
+        "name": "Athletic Recovery & Mobility",
+        "time": "5:30 PM",
+        "duration": "45m",
+        "instructor": "Elena Rostova",
+        "room": "Studio B",
+        "category": "Yoga",
+        "spotsLeft": 8,
+        "totalSpots": 25,
+        "day": "Mon",
+        "intensity": "Moderate"
+      }
+    ],
+    "rewards": [
+      {
+        "id": "r-kf-1",
+        "title": "Free Korrect Electrolyte Shake",
+        "reqWorkouts": 5,
+        "description": "Redeem at the juice bar after 5 completed check-ins this month.",
+        "unlocked": true,
+        "code": "KORRECT-SHAKE-FREE",
+        "icon": "drink"
+      },
+      {
+        "id": "r-kf-2",
+        "title": "50% Off 1-on-1 PT Assessment",
+        "reqWorkouts": 12,
+        "description": "60-minute biomechanics and movement screen with Coach Marcus.",
+        "unlocked": true,
+        "code": "KORRECT-PT50",
+        "icon": "percent"
+      }
+    ]
   }
 }

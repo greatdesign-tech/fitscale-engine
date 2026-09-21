@@ -523,3 +523,75 @@ export const PRESET_DEMOS: Record<string, GymConfig> = {
     ],
   },
 };
+
+export function ensureGymConfig(cfg: Partial<GymConfig> | null | undefined): GymConfig {
+  const base = PRESET_DEMOS['apex-fitness'];
+  if (!cfg) return base;
+
+  const raw = cfg as Partial<GymConfig>;
+  const agency = raw.agencySettings || base.agencySettings;
+
+  return {
+    ...base,
+    ...raw,
+    id: raw.id || `demo-${raw.slug || 'custom'}`,
+    name: raw.name || base.name,
+    slug: raw.slug || base.slug,
+    tagline: raw.tagline || base.tagline,
+    location: raw.location || base.location,
+    primaryColor: raw.primaryColor || base.primaryColor,
+    secondaryColor: raw.secondaryColor || base.secondaryColor,
+    isDarkMode: raw.isDarkMode ?? base.isDarkMode,
+    logoMonogram: raw.logoMonogram || (raw.name ? raw.name.slice(0, 2).toUpperCase() : base.logoMonogram),
+    industryType: raw.industryType || base.industryType,
+    customPushMessage: raw.customPushMessage || base.customPushMessage,
+    agencySettings: {
+      agencyName: agency?.agencyName || 'FitDigital Agency',
+      calBookingUrl: '',
+      repName: 'Taiwo Adediji',
+      repTitle: agency?.repTitle || 'Head of Fitness Partnerships',
+      repEmail: 'taiwo.adediji.apps@gmail.com',
+      repPhone: agency?.repPhone || '+1 (512) 843-9120',
+    },
+    features: {
+      classBooking: raw.features?.classBooking ?? true,
+      trainerScheduler: raw.features?.trainerScheduler ?? true,
+      loyaltyPunchCard: raw.features?.loyaltyPunchCard ?? true,
+      pushNotification: raw.features?.pushNotification ?? true,
+      passPurchase: raw.features?.passPurchase ?? true,
+    },
+    homeConfig: {
+      greeting: raw.homeConfig?.greeting ?? base.homeConfig?.greeting ?? 'Welcome back, Alex!',
+      memberBadge: raw.homeConfig?.memberBadge ?? base.homeConfig?.memberBadge ?? 'VIP Member',
+      membershipCardTitle: raw.homeConfig?.membershipCardTitle ?? base.homeConfig?.membershipCardTitle ?? 'All-Access Performance Pass',
+      quickAction1Label: raw.homeConfig?.quickAction1Label ?? base.homeConfig?.quickAction1Label ?? 'Book Class',
+      quickAction2Label: raw.homeConfig?.quickAction2Label ?? base.homeConfig?.quickAction2Label ?? 'Scan Pass',
+      quickAction3Label: raw.homeConfig?.quickAction3Label ?? base.homeConfig?.quickAction3Label ?? 'Streak',
+      featuredClassBadge: raw.homeConfig?.featuredClassBadge ?? base.homeConfig?.featuredClassBadge ?? 'Up Next Today',
+    },
+    scheduleConfig: {
+      title: raw.scheduleConfig?.title ?? base.scheduleConfig?.title ?? 'Live Class Schedule',
+      subtitle: raw.scheduleConfig?.subtitle ?? base.scheduleConfig?.subtitle ?? 'Book your workout slot in real time',
+      categories:
+        raw.scheduleConfig?.categories && raw.scheduleConfig.categories.length > 0
+          ? raw.scheduleConfig.categories
+          : base.scheduleConfig?.categories ?? ['All', 'HIIT', 'Strength', 'Yoga', 'Spin'],
+      confirmationToast:
+        raw.scheduleConfig?.confirmationToast ?? base.scheduleConfig?.confirmationToast ?? "You're booked! Added to Apple Calendar ✓",
+    },
+    trainersConfig: {
+      title: raw.trainersConfig?.title ?? base.trainersConfig?.title ?? 'Coaches & Trainers',
+      subtitle: raw.trainersConfig?.subtitle ?? base.trainersConfig?.subtitle ?? '1-on-1 private coaching & performance assessments',
+    },
+    rewardsConfig: {
+      title: raw.rewardsConfig?.title ?? base.rewardsConfig?.title ?? 'Member Rewards',
+      subtitle: raw.rewardsConfig?.subtitle ?? base.rewardsConfig?.subtitle ?? 'Punch card, streaks & member perks',
+      tierBadge: raw.rewardsConfig?.tierBadge ?? base.rewardsConfig?.tierBadge ?? 'Tier 2 Athlete',
+      monthlyGoal: raw.rewardsConfig?.monthlyGoal ?? base.rewardsConfig?.monthlyGoal ?? 20,
+      startingStreak: raw.rewardsConfig?.startingStreak ?? base.rewardsConfig?.startingStreak ?? 14,
+    },
+    classes: Array.isArray(raw.classes) && raw.classes.length > 0 ? raw.classes : (base.classes || []),
+    trainers: Array.isArray(raw.trainers) && raw.trainers.length > 0 ? raw.trainers : (base.trainers || []),
+    rewards: Array.isArray(raw.rewards) && raw.rewards.length > 0 ? raw.rewards : (base.rewards || []),
+  };
+}
