@@ -10,7 +10,7 @@ import { AgencyHeader } from '@/components/prospect/AgencyHeader';
 import { FloatingAgencyCta } from '@/components/prospect/FloatingAgencyCta';
 import { StrategyCallModal } from '@/components/prospect/StrategyCallModal';
 import { QrShareModal } from '@/components/prospect/QrShareModal';
-import { Smartphone, Sparkles, RefreshCw, Calendar, ArrowRight } from 'lucide-react';
+import { Smartphone, Sparkles, RefreshCw, Calendar, ArrowRight, Mail } from 'lucide-react';
 
 export default function DemoViewerPage() {
   const params = useParams();
@@ -74,8 +74,8 @@ export default function DemoViewerPage() {
             className="mt-3 w-full py-2.5 px-4 rounded-xl text-xs font-bold text-slate-950 flex items-center justify-center gap-1.5 shadow-lg"
             style={{ backgroundColor: config.primaryColor }}
           >
-            <Calendar className="w-3.5 h-3.5" />
-            <span>Launch This App for {config.name}</span>
+            <Mail className="w-3.5 h-3.5" />
+            <span>Get App Proposal & Specs via Email</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>

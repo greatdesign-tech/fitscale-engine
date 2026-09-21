@@ -3,16 +3,15 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import {
-  Calendar,
-  CheckCircle,
   TrendingUp,
   Bell,
   Sparkles,
   ArrowRight,
   ShieldCheck,
-  PhoneCall,
   Mail,
-  Smartphone,
+  Send,
+  MessageSquare,
+  CheckCheck,
 } from 'lucide-react';
 import { GymConfig } from '@/types';
 
@@ -41,7 +40,7 @@ export const FloatingAgencyCta: React.FC<FloatingAgencyCtaProps> = ({
           <span className="text-[11px] font-bold tracking-wider uppercase text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20 flex items-center gap-1.5">
             <Sparkles className="w-3 h-3" /> Exclusive Proposal
           </span>
-          <span className="text-xs text-slate-400 font-medium">Turnkey in 14 Days</span>
+          <span className="text-xs text-slate-400 font-medium">100% Email-to-Email</span>
         </div>
 
         {/* Headline */}
@@ -87,13 +86,13 @@ export const FloatingAgencyCta: React.FC<FloatingAgencyCtaProps> = ({
           </div>
 
           <div className="flex items-start gap-3 p-2.5 rounded-2xl bg-slate-800/40 border border-white/5">
-            <div className="w-7 h-7 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center shrink-0 mt-0.5">
-              <Smartphone className="w-4 h-4" />
+            <div className="w-7 h-7 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">
+              <MessageSquare className="w-4 h-4" />
             </div>
             <div>
-              <h4 className="text-xs font-bold text-white">Automate Class & PT Bookings</h4>
+              <h4 className="text-xs font-bold text-white">Zero Phone Calls Required</h4>
               <p className="text-[11px] text-slate-400 mt-0.5">
-                Self-serve reservations, waitlists, and personal training payments 24/7.
+                We respect your time. All pricing, feature specs, and onboarding steps are handled directly over email.
               </p>
             </div>
           </div>
@@ -107,14 +106,14 @@ export const FloatingAgencyCta: React.FC<FloatingAgencyCtaProps> = ({
           className="w-full py-4 px-5 rounded-2xl font-extrabold text-sm flex items-center justify-center gap-2 transition shadow-xl text-slate-950 hover:brightness-105"
           style={{ backgroundColor: config.primaryColor }}
         >
-          <Calendar className="w-4 h-4" />
-          <span>Book Strategy Call to Launch Your App</span>
+          <Mail className="w-4 h-4" />
+          <span>Get App Proposal & Specs via Email</span>
           <ArrowRight className="w-4 h-4" />
         </motion.button>
 
         <p className="text-[11px] text-center text-slate-400 mt-2.5 flex items-center justify-center gap-1.5">
           <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-          <span>No commitment • 20-minute tailored tech roadmap</span>
+          <span>No phone calls • Detailed proposal & pricing in your inbox</span>
         </p>
 
         {/* Agency Rep Contact Card */}
@@ -129,24 +128,16 @@ export const FloatingAgencyCta: React.FC<FloatingAgencyCtaProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5">
-            <a
-              href={`mailto:${rep.repEmail}?subject=Demo Inquiry for ${encodeURIComponent(
-                config.name
-              )}`}
-              className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition"
-              title="Email rep"
-            >
-              <Mail className="w-4 h-4" />
-            </a>
-            <a
-              href={`tel:${rep.repPhone}`}
-              className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition"
-              title="Call rep"
-            >
-              <PhoneCall className="w-4 h-4" />
-            </a>
-          </div>
+          <a
+            href={`mailto:${rep.repEmail}?subject=App Proposal for ${encodeURIComponent(
+              config.name
+            )}`}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white text-xs font-semibold transition border border-white/5 shadow-sm"
+            title="Email rep directly"
+          >
+            <Mail className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Email Rep</span>
+          </a>
         </div>
       </div>
     </div>

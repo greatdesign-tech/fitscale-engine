@@ -4,16 +4,15 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
-  Calendar,
-  Clock,
   CheckCircle2,
   Sparkles,
   ArrowRight,
   ShieldCheck,
-  Building2,
   User,
   Mail,
-  Phone,
+  Send,
+  MessageSquare,
+  Check,
 } from 'lucide-react';
 import { GymConfig } from '@/types';
 
@@ -23,26 +22,58 @@ interface StrategyCallModalProps {
   onClose: () => void;
 }
 
+const FEATURE_OPTIONS = [
+  'Live Class Booking & Waitlists',
+  'Lockscreen Push Reminders',
+  'Turnstile QR Digital Pass',
+  'Trainer 1-on-1 PT Bookings',
+  'Streak Tracker & Punch Card',
+];
+
 export const StrategyCallModal: React.FC<StrategyCallModalProps> = ({
   config,
   isOpen,
   onClose,
 }) => {
+  const rep = config.agencySettings;
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [timeSlot, setTimeSlot] = useState('Tomorrow 2:00 PM EST');
-  const [objective, setObjective] = useState('Boost Member Retention (+30%)');
+  const [currentSoftware, setCurrentSoftware] = useState('No Mobile App Currently');
+  const [selectedFeatures, setSelectedFeatures] = useState<string[]>([
+    'Live Class Booking & Waitlists',
+    'Lockscreen Push Reminders',
+  ]);
+  const [message, setMessage] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  const toggleFeature = (feat: string) => {
+    setSelectedFeatures((prev) =>
+      prev.includes(feat) ? prev.filter((f) => f !== feat) : [...prev, feat]
+    );
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+
+    // Save lead inquiry record via API if lead is attached
+    if (config.attachedLeadId) {
+      fetch(`/api/leads/${config.attachedLeadId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          notes: `[Email Inquiry] From: ${name} (${email}) | Features: ${selectedFeatures.join(
+            ', '
+          )} | Message: ${message || 'None'}`,
+        }),
+      }).catch(() => {});
+    }
+
     setTimeout(() => {
       setIsLoading(false);
       setIsSubmitted(true);
-    }, 800);
+    }, 600);
   };
 
   const handleReset = () => {
@@ -50,15 +81,23 @@ export const StrategyCallModal: React.FC<StrategyCallModalProps> = ({
     onClose();
   };
 
+  const directMailtoUrl = `mailto:${rep.repEmail}?subject=App Proposal Inquiry for ${encodeURIComponent(
+    config.name
+  )}&body=${encodeURIComponent(
+    `Hi ${rep.repName},\n\nI just viewed the interactive app demo for ${config.name} and would like to receive pricing and feature details.\n\nName: ${name || '[My Name]'}\nGym: ${config.name} (${config.location})\nCurrent Setup: ${currentSoftware}\nDesired Features: ${selectedFeatures.join(
+      ', '
+    )}\n\nQuestions / Notes:\n${message || 'Please send over pricing and timeline.'}\n\nThanks!`
+  )}`;
+
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-y-auto">
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="w-full max-w-lg bg-slate-900 border border-white/15 rounded-3xl p-6 shadow-2xl relative overflow-hidden"
+            className="w-full max-w-lg bg-slate-900 border border-white/15 rounded-3xl p-6 shadow-2xl relative overflow-hidden my-auto"
           >
             {/* Background Glow */}
             <div
@@ -77,22 +116,22 @@ export const StrategyCallModal: React.FC<StrategyCallModalProps> = ({
             {!isSubmitted ? (
               <div>
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider bg-emerald-500/10 px-2.5 py-0.5 rounded-full">
-                    Agency Fast-Track Booking
+                  <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider bg-emerald-500/10 px-2.5 py-0.5 rounded-full flex items-center gap-1.5 border border-emerald-500/20">
+                    <Mail className="w-3 h-3" /> 100% Email-to-Email • Zero Sales Calls
                   </span>
                 </div>
 
                 <h3 className="text-xl font-black text-white tracking-tight">
-                  Launch {config.name}&apos;s Custom App
+                  Get App Proposal & Pricing for {config.name}
                 </h3>
-                <p className="text-xs text-slate-300 mt-1 mb-5">
-                  Lock in your 20-minute tailored tech & app roadmap session with Marcus Vance ({config.agencySettings.agencyName}).
+                <p className="text-xs text-slate-300 mt-1 mb-4">
+                  Skip the phone calls and calendar scheduling. Fill out your details below and our development team will email you a complete proposal, feature spec, and transparent pricing.
                 </p>
 
                 <form onSubmit={handleSubmit} className="space-y-3.5">
                   <div>
                     <label className="block text-xs font-semibold text-slate-300 mb-1">
-                      Your Name / Role
+                      Your Name & Role
                     </label>
                     <div className="relative">
                       <User className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
@@ -101,79 +140,88 @@ export const StrategyCallModal: React.FC<StrategyCallModalProps> = ({
                         required
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        placeholder="e.g., Alex Johnson (Managing Director)"
+                        placeholder="e.g., Alex Johnson (Managing Director / Owner)"
                         className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-slate-800/80 border border-white/10 text-white text-xs placeholder:text-slate-500 focus:outline-none focus:border-emerald-500"
                       />
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-300 mb-1">
-                        Work Email
-                      </label>
-                      <div className="relative">
-                        <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                        <input
-                          type="email"
-                          required
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          placeholder="owner@yourgym.com"
-                          className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-slate-800/80 border border-white/10 text-white text-xs placeholder:text-slate-500 focus:outline-none focus:border-emerald-500"
-                        />
-                      </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">
+                      Work Email Address
+                    </label>
+                    <div className="relative">
+                      <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                      <input
+                        type="email"
+                        required
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="owner@yourgym.com"
+                        className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-slate-800/80 border border-white/10 text-white text-xs placeholder:text-slate-500 focus:outline-none focus:border-emerald-500"
+                      />
                     </div>
+                    <span className="text-[10px] text-slate-400 mt-1 block">
+                      We will send the proposal and reply directly to this address.
+                    </span>
+                  </div>
 
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-300 mb-1">
-                        Mobile Phone (for SMS confirmation)
-                      </label>
-                      <div className="relative">
-                        <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                        <input
-                          type="tel"
-                          required
-                          value={phone}
-                          onChange={(e) => setPhone(e.target.value)}
-                          placeholder="+1 (555) 000-0000"
-                          className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-slate-800/80 border border-white/10 text-white text-xs placeholder:text-slate-500 focus:outline-none focus:border-emerald-500"
-                        />
-                      </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">
+                      Current Member Database / Software
+                    </label>
+                    <select
+                      value={currentSoftware}
+                      onChange={(e) => setCurrentSoftware(e.target.value)}
+                      className="w-full px-3 py-2.5 rounded-xl bg-slate-800/80 border border-white/10 text-white text-xs focus:outline-none focus:border-emerald-500"
+                    >
+                      <option value="No Mobile App Currently">No Mobile App Currently</option>
+                      <option value="Mindbody / Mariana Tek">Mindbody / Mariana Tek</option>
+                      <option value="PushPress / Wodify">PushPress / Wodify</option>
+                      <option value="Zen Planner / Glofox">Zen Planner / Glofox</option>
+                      <option value="Custom / Other System">Custom / Other Database</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                      Desired Mobile Features (Select all that apply)
+                    </label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {FEATURE_OPTIONS.map((feat) => {
+                        const isSelected = selectedFeatures.includes(feat);
+                        return (
+                          <button
+                            key={feat}
+                            type="button"
+                            onClick={() => toggleFeature(feat)}
+                            className={`px-2.5 py-1 rounded-xl text-[11px] font-medium transition border flex items-center gap-1 ${
+                              isSelected
+                                ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 font-bold'
+                                : 'bg-slate-800/60 text-slate-400 border-white/5 hover:border-white/20'
+                            }`}
+                          >
+                            {isSelected && <Check className="w-3 h-3" />}
+                            <span>{feat}</span>
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
 
                   <div>
                     <label className="block text-xs font-semibold text-slate-300 mb-1">
-                      Preferred Call Window
+                      Questions or Specific Notes (Optional)
                     </label>
-                    <select
-                      value={timeSlot}
-                      onChange={(e) => setTimeSlot(e.target.value)}
-                      className="w-full px-3 py-2.5 rounded-xl bg-slate-800/80 border border-white/10 text-white text-xs focus:outline-none focus:border-emerald-500"
-                    >
-                      <option value="Tomorrow 10:00 AM EST">Tomorrow 10:00 AM EST</option>
-                      <option value="Tomorrow 2:00 PM EST">Tomorrow 2:00 PM EST</option>
-                      <option value="Thursday 11:30 AM EST">Thursday 11:30 AM EST</option>
-                      <option value="Thursday 4:00 PM EST">Thursday 4:00 PM EST</option>
-                      <option value="Friday 1:00 PM EST">Friday 1:00 PM EST</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-300 mb-1">
-                      Primary Strategic Priority
-                    </label>
-                    <select
-                      value={objective}
-                      onChange={(e) => setObjective(e.target.value)}
-                      className="w-full px-3 py-2.5 rounded-xl bg-slate-800/80 border border-white/10 text-white text-xs focus:outline-none focus:border-emerald-500"
-                    >
-                      <option value="Boost Member Retention (+30%)">Boost Member Retention (+30%)</option>
-                      <option value="Eliminate Class No-Shows with Push">Eliminate Class No-Shows with Push</option>
-                      <option value="Self-Serve 1-on-1 PT Bookings">Self-Serve 1-on-1 PT Bookings</option>
-                      <option value="Replace Mindbody/Wodify Custom Frontend">Replace Third-Party Frontend</option>
-                    </select>
+                    <div className="relative">
+                      <textarea
+                        rows={2}
+                        value={message}
+                        onChange={(e) => setMessage(e.target.value)}
+                        placeholder="e.g., How long does App Store review take? What are the monthly costs?"
+                        className="w-full px-3 py-2 rounded-xl bg-slate-800/80 border border-white/10 text-white text-xs placeholder:text-slate-500 focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
                   </div>
 
                   <button
@@ -185,20 +233,30 @@ export const StrategyCallModal: React.FC<StrategyCallModalProps> = ({
                     {isLoading ? (
                       <span className="flex items-center gap-2">
                         <span className="w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
-                        Scheduling Call...
+                        Sending Request...
                       </span>
                     ) : (
                       <>
-                        <Calendar className="w-4 h-4" />
-                        <span>Confirm 20-Min Strategy Call</span>
+                        <Send className="w-4 h-4" />
+                        <span>Send Email Inquiry & Get Proposal</span>
                         <ArrowRight className="w-4 h-4" />
                       </>
                     )}
                   </button>
                 </form>
+
+                <div className="mt-3 text-center">
+                  <a
+                    href={directMailtoUrl}
+                    className="text-[11px] text-slate-400 hover:text-white underline underline-offset-2 transition inline-flex items-center gap-1"
+                  >
+                    <Mail className="w-3 h-3 text-emerald-400" />
+                    <span>Prefer to send a direct email now? Click here to email {rep.repEmail}</span>
+                  </a>
+                </div>
               </div>
             ) : (
-              <div className="py-8 text-center space-y-4">
+              <div className="py-6 text-center space-y-4">
                 <div
                   className="w-16 h-16 rounded-full mx-auto flex items-center justify-center text-slate-950 shadow-xl"
                   style={{ backgroundColor: config.primaryColor }}
@@ -206,24 +264,47 @@ export const StrategyCallModal: React.FC<StrategyCallModalProps> = ({
                   <CheckCircle2 className="w-8 h-8" />
                 </div>
 
-                <h3 className="text-xl font-bold text-white">Call Confirmed!</h3>
+                <h3 className="text-xl font-bold text-white">Inquiry Sent to Our Inbox!</h3>
                 <p className="text-xs text-slate-300 max-w-sm mx-auto leading-relaxed">
-                  We have reserved your strategy slot for <span className="text-white font-bold">{timeSlot}</span>. An invite has been sent to <span className="text-emerald-400 font-mono">{email || 'your email'}</span>.
+                  We have received your request for <span className="text-white font-bold">{config.name}</span>. A detailed proposal and transparent pricing will be emailed directly to <span className="text-emerald-400 font-mono font-bold">{email || 'your email'}</span>.
                 </p>
 
-                <div className="p-3 bg-slate-800/60 rounded-xl border border-white/10 text-[11px] text-slate-300 max-w-sm mx-auto text-left space-y-1">
-                  <div>• Dedicated Rep: {config.agencySettings.repName}</div>
-                  <div>• Custom App Spec: {config.name} ({config.location})</div>
-                  <div>• Estimated Go-Live: Within 14 business days</div>
+                <div className="p-3.5 bg-slate-800/60 rounded-2xl border border-white/10 text-[11px] text-slate-300 max-w-sm mx-auto text-left space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-400">Assigned Solutions Lead:</span>
+                    <span className="text-white font-bold">{rep.repName}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-400">Direct Contact Email:</span>
+                    <span className="text-emerald-400 font-mono font-bold">{rep.repEmail}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-400">Communication Mode:</span>
+                    <span className="text-white font-semibold">100% Async Email-to-Email</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-400">Turnaround Time:</span>
+                    <span className="text-white font-semibold">&lt; 4 business hours</span>
+                  </div>
                 </div>
 
-                <button
-                  onClick={handleReset}
-                  className="px-6 py-2.5 rounded-xl text-xs font-bold text-slate-950"
-                  style={{ backgroundColor: config.primaryColor }}
-                >
-                  Back to Demo
-                </button>
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-2 pt-2">
+                  <a
+                    href={directMailtoUrl}
+                    className="w-full sm:w-auto px-5 py-2.5 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-white border border-white/10 transition flex items-center justify-center gap-1.5"
+                  >
+                    <Mail className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Open Email Client</span>
+                  </a>
+
+                  <button
+                    onClick={handleReset}
+                    className="w-full sm:w-auto px-6 py-2.5 rounded-xl text-xs font-bold text-slate-950"
+                    style={{ backgroundColor: config.primaryColor }}
+                  >
+                    Back to Demo
+                  </button>
+                </div>
               </div>
             )}
           </motion.div>
@@ -232,3 +313,5 @@ export const StrategyCallModal: React.FC<StrategyCallModalProps> = ({
     </AnimatePresence>
   );
 };
+
+export const EmailInquiryModal = StrategyCallModal;

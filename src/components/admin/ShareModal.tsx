@@ -64,13 +64,13 @@ ${demoUrl}
 
 (You can tap through the live class schedule, 1-on-1 PT bookings, and digital loyalty punch card right in your browser or on your phone).
 
-Would you be open to a quick 10-minute chat this Thursday or Friday to see how this could increase member retention by 30%?
+If you'd like to review the full app specifications, rollout timeline, and pricing for ${config.name}, just reply directly to this email—no sales calls required, we coordinate everything conveniently over email.
 
 Best regards,
 ${config.agencySettings.repName}
 ${config.agencySettings.repTitle}
 ${config.agencySettings.agencyName}
-${config.agencySettings.repPhone}`;
+${config.agencySettings.repEmail}`;
 
   const copyToClipboard = (text: string, isEmail = false) => {
     if (typeof navigator !== 'undefined') {
