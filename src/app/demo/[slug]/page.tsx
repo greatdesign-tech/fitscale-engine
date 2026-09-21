@@ -12,7 +12,7 @@ import { AgencyHeader } from '@/components/prospect/AgencyHeader';
 import { FloatingAgencyCta } from '@/components/prospect/FloatingAgencyCta';
 import { StrategyCallModal } from '@/components/prospect/StrategyCallModal';
 import { QrShareModal } from '@/components/prospect/QrShareModal';
-import { Smartphone, RefreshCw, ArrowRight, Mail, AlertCircle } from 'lucide-react';
+import { Smartphone, RefreshCw, ArrowRight, AlertCircle, Lock } from 'lucide-react';
 
 export default function DemoViewerPage() {
   const params = useParams();
@@ -156,21 +156,26 @@ export default function DemoViewerPage() {
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 lg:p-8 flex flex-col justify-center">
         {/* Mobile View CTA Header (Only visible on small viewports) */}
         <div className="block lg:hidden mb-4 p-4 rounded-2xl bg-slate-900 border border-white/10 text-center">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full inline-block mb-1">
-            Custom App Concept for {config.name}
-          </span>
-          <h2 className="text-base font-bold text-white">
-            Experience Your Gym&apos;s Mobile Prototype
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full inline-block">
+              ✦ EXCLUSIVE PROPOSAL
+            </span>
+            <span className="text-[11px] text-slate-400 font-medium">14-Day Launch Guaranteed</span>
+          </div>
+          <h2 className="text-sm sm:text-base font-extrabold text-white">
+            Want this exact mobile app branded for {config.name}?
           </h2>
           <button
             onClick={() => setIsStrategyModalOpen(true)}
-            className="mt-3 w-full py-2.5 px-3 rounded-xl text-xs font-bold text-slate-950 flex items-center justify-center gap-1.5 shadow-lg whitespace-nowrap"
-            style={{ backgroundColor: config.primaryColor }}
+            className="mt-3 w-full py-3.5 px-3 rounded-xl text-xs sm:text-sm font-extrabold text-slate-950 flex items-center justify-center gap-1.5 shadow-lg bg-orange-500 hover:bg-orange-400 active:scale-98 transition cursor-pointer"
           >
-            <Mail className="w-3.5 h-3.5 shrink-0" />
-            <span className="whitespace-nowrap">Get App Proposal & Specs via Email</span>
+            <span>Get Pricing & 14-Day Launch Blueprint</span>
             <ArrowRight className="w-3.5 h-3.5 shrink-0" />
           </button>
+          <p className="text-[11px] text-center text-slate-400 mt-2 flex items-center justify-center gap-1.5">
+            <Lock className="w-3 h-3 text-emerald-400 shrink-0" />
+            <span>Delivered instantly to your inbox • No spam</span>
+          </p>
         </div>
 
         {/* Split Showcase Layout: Centered Phone + Floating Right CTA */}
