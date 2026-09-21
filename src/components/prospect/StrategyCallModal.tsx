@@ -187,7 +187,7 @@ export const StrategyCallModal: React.FC<StrategyCallModalProps> = ({
                     ) : (
                       <>
                         <Send className="w-4 h-4" />
-                        <span>Send Email Inquiry & Get Proposal</span>
+                        <span>Send My Custom Proposal</span>
                         <ArrowRight className="w-4 h-4" />
                       </>
                     )}

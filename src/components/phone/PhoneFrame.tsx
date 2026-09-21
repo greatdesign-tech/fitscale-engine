@@ -111,7 +111,7 @@ export const PhoneFrame: React.FC<PhoneFrameProps> = ({
 
   return (
     <div
-      className={`relative mx-auto w-[360px] h-[730px] rounded-[52px] bg-slate-950 p-3 shadow-2xl border-[8px] border-slate-800 ring-1 ring-white/10 select-none overflow-hidden transition-all duration-300 ${className}`}
+      className={`overflow-hidden relative mx-auto w-[360px] h-[730px] rounded-[52px] bg-slate-950 p-3 shadow-2xl border-[8px] border-slate-800 ring-1 ring-white/10 select-none transition-all duration-300 ${className}`}
       style={
         {
           '--brand-primary': config.primaryColor,
@@ -121,44 +121,48 @@ export const PhoneFrame: React.FC<PhoneFrameProps> = ({
     >
       {/* Phone Outer Screen Bezel Container */}
       <div
-        className={`relative w-full h-full rounded-[42px] overflow-hidden flex flex-col ${
+        className={`overflow-hidden relative w-full h-full rounded-[42px] flex flex-col ${
           config.isDarkMode ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'
         }`}
       >
-        {/* Dynamic Island / Top Notch Pill */}
-        <div className="absolute top-2.5 left-0 right-0 z-50 flex justify-center pointer-events-none">
-          <div className="w-28 h-6 bg-black rounded-full flex items-center justify-between px-2.5 shadow-md">
-            <div className="w-2.5 h-2.5 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center">
-              <div className="w-1 h-1 rounded-full bg-blue-500/60" />
-            </div>
-            <div className="w-2 h-2 rounded-full bg-emerald-500/80 animate-pulse" />
-          </div>
-        </div>
-
-        {/* Status Bar */}
-        <div className="relative z-40 px-6 pt-3 pb-1 flex items-center justify-between text-xs font-semibold text-slate-300">
-          <span className="text-[12px] font-bold tracking-tight">{currentTime}</span>
-          <div className="flex items-center gap-1.5 text-slate-300">
-            <Signal className="w-3.5 h-3.5" />
-            <span className="text-[10px] font-bold">5G</span>
-            <Wifi className="w-3.5 h-3.5" />
-            <div className="flex items-center">
-              <span className="text-[10px] mr-0.5">98%</span>
-              <Battery className="w-4 h-4 fill-slate-200 text-slate-200" />
-            </div>
-          </div>
-        </div>
-
-        {/* Simulated Push Notification Banner */}
-        <PushNotification
-          config={config}
-          isOpen={showPushNotification}
-          onClose={() => setShowPushNotification(false)}
-          onTap={handleTapPushNotification}
-        />
-
         {/* Main Scrollable Screen Content */}
-        <div className="flex-1 overflow-y-auto px-4 pt-4 phone-screen-scroll relative">
+        <div className="flex-1 overflow-y-auto pb-24 phone-screen-scroll relative">
+          {/* Top Status Bar (Sticky at top) */}
+          <div className="sticky top-0 z-20 bg-[#0B0F17]/90 backdrop-blur-md px-6 pt-2.5 pb-2 select-none border-b border-white/[0.04]">
+            {/* Dynamic Island / Top Notch Pill */}
+            <div className="absolute top-2 left-0 right-0 z-30 flex justify-center pointer-events-none">
+              <div className="w-28 h-5.5 bg-black rounded-full flex items-center justify-between px-2.5 shadow-md">
+                <div className="w-2 h-2 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center">
+                  <div className="w-1 h-1 rounded-full bg-blue-500/60" />
+                </div>
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500/80 animate-pulse" />
+              </div>
+            </div>
+
+            {/* Status Bar Indicators */}
+            <div className="flex items-center justify-between text-xs font-semibold text-slate-300">
+              <span className="text-[12px] font-bold tracking-tight">{currentTime}</span>
+              <div className="flex items-center gap-1.5 text-slate-300">
+                <Signal className="w-3.5 h-3.5" />
+                <span className="text-[10px] font-bold">5G</span>
+                <Wifi className="w-3.5 h-3.5" />
+                <div className="flex items-center">
+                  <span className="text-[10px] mr-0.5">98%</span>
+                  <Battery className="w-4 h-4 fill-slate-200 text-slate-200" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Simulated Push Notification Banner */}
+          <PushNotification
+            config={config}
+            isOpen={showPushNotification}
+            onClose={() => setShowPushNotification(false)}
+            onTap={handleTapPushNotification}
+          />
+
+          <div className="px-4 pt-3">
           <AnimatePresence mode="wait">
             {activeTab === 'home' && (
               <motion.div
@@ -228,6 +232,7 @@ export const PhoneFrame: React.FC<PhoneFrameProps> = ({
               </motion.div>
             )}
           </AnimatePresence>
+          </div>
         </div>
 
         {/* Global Toast Message (iOS Style) */}

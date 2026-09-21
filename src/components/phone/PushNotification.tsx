@@ -30,7 +30,7 @@ export const PushNotification: React.FC<PushNotificationProps> = ({
           animate={{ y: 0, opacity: 1, scale: 1 }}
           exit={{ y: -80, opacity: 0, scale: 0.95 }}
           transition={{ type: 'spring', damping: 22, stiffness: 280 }}
-          className="absolute top-12 left-3 right-3 z-50 cursor-pointer"
+          className="absolute top-10 left-3 right-3 z-30 cursor-pointer"
           onClick={onTap}
         >
           <div className="bg-slate-900/95 text-slate-100 backdrop-blur-xl border border-white/15 rounded-2xl p-3 shadow-2xl ring-1 ring-black/40">
