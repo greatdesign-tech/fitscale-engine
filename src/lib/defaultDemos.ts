@@ -3,9 +3,9 @@ import { GymConfig } from '@/types';
 export const DEFAULT_AGENCY = {
   agencyName: 'FitDigital Agency',
   calBookingUrl: 'https://calendly.com/fitdigital-demos/strategy-session',
-  repName: 'Marcus Vance',
+  repName: 'Taiwo Adediji',
   repTitle: 'Head of Fitness Partnerships',
-  repEmail: 'marcus@fitdigitalapps.io',
+  repEmail: 'taiwo.adediji.apps@gmail.com',
   repPhone: '+1 (512) 843-9120',
 };
 
