@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import QRCode from 'qrcode';
 import { GymConfig } from '@/types';
+import { buildShareableDemoUrl } from '@/lib/demoUrlEncoder';
 
 interface ShareModalProps {
   config: GymConfig;
@@ -33,7 +34,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
   const [activeTab, setActiveTab] = useState<'link' | 'email'>('link');
 
   const origin = typeof window !== 'undefined' ? window.location.origin : '';
-  const demoUrl = `${origin}/demo/${config.slug}`;
+  const demoUrl = buildShareableDemoUrl(config, origin);
 
   useEffect(() => {
     if (isOpen && demoUrl) {

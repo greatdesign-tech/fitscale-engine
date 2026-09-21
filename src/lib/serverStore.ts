@@ -3,18 +3,16 @@ import path from 'path';
 import { GymConfig } from '@/types';
 import { PRESET_DEMOS } from './defaultDemos';
 
-const DATA_DIR = path.join(process.cwd(), 'data');
-const DEMOS_FILE = path.join(DATA_DIR, 'demos.json');
+// Global memory cache to prevent loss across warm serverless invocations
+const globalForDemos = globalThis as unknown as {
+  __fitscale_demos_cache?: Map<string, GymConfig>;
+};
+const memoryCache = globalForDemos.__fitscale_demos_cache || new Map<string, GymConfig>();
+globalForDemos.__fitscale_demos_cache = memoryCache;
 
-function ensureDataDir() {
-  if (!fs.existsSync(DATA_DIR)) {
-    try {
-      fs.mkdirSync(DATA_DIR, { recursive: true });
-    } catch (e) {
-      console.error('Failed to create data directory', e);
-    }
-  }
-}
+const PRIMARY_DATA_DIR = path.join(process.cwd(), 'data');
+const PRIMARY_FILE = path.join(PRIMARY_DATA_DIR, 'demos.json');
+const TMP_FILE = path.join('/tmp', 'fitscale-demos.json');
 
 function sanitizeDemoConfig(cfg: GymConfig): GymConfig {
   if (cfg.agencySettings) {
@@ -28,39 +26,64 @@ function sanitizeDemoConfig(cfg: GymConfig): GymConfig {
   return cfg;
 }
 
-function readDemosFromDisk(): Record<string, GymConfig> {
-  ensureDataDir();
-  if (!fs.existsSync(DEMOS_FILE)) {
-    return {};
-  }
+function readFromPath(filePath: string): Record<string, GymConfig> {
   try {
-    const raw = fs.readFileSync(DEMOS_FILE, 'utf-8');
-    if (!raw.trim()) return {};
-    const parsed = JSON.parse(raw);
-    return parsed && typeof parsed === 'object' ? parsed : {};
+    if (fs.existsSync(filePath)) {
+      const raw = fs.readFileSync(filePath, 'utf-8');
+      if (raw.trim()) {
+        const parsed = JSON.parse(raw);
+        return parsed && typeof parsed === 'object' ? parsed : {};
+      }
+    }
   } catch (e) {
-    console.error('Error reading demos.json from disk', e);
-    return {};
+    // Ignore read error
   }
+  return {};
 }
 
-function writeDemosToDisk(demos: Record<string, GymConfig>) {
-  ensureDataDir();
+function readAllDiskDemos(): Record<string, GymConfig> {
+  const primary = readFromPath(PRIMARY_FILE);
+  const tmp = readFromPath(TMP_FILE);
+  return { ...primary, ...tmp };
+}
+
+function writeToDisk(demos: Record<string, GymConfig>) {
+  const jsonStr = JSON.stringify(demos, null, 2);
+
+  // Try writing to primary data directory
   try {
-    fs.writeFileSync(DEMOS_FILE, JSON.stringify(demos, null, 2), 'utf-8');
+    if (!fs.existsSync(PRIMARY_DATA_DIR)) {
+      fs.mkdirSync(PRIMARY_DATA_DIR, { recursive: true });
+    }
+    fs.writeFileSync(PRIMARY_FILE, jsonStr, 'utf-8');
+    return;
   } catch (e) {
-    console.error('Error writing demos.json to disk', e);
+    // Read-only filesystem on Vercel or permission error; fall back to /tmp
+  }
+
+  // Fallback to /tmp for serverless environments
+  try {
+    fs.writeFileSync(TMP_FILE, jsonStr, 'utf-8');
+  } catch (e) {
+    console.warn('Server disk write fallback failed; stored in memory cache', e);
   }
 }
 
 export function getServerDemoBySlug(slug: string): GymConfig | null {
-  // 1. Check disk file first (published custom configs take priority over default presets)
-  const diskDemos = readDemosFromDisk();
-  if (diskDemos[slug]) {
-    return sanitizeDemoConfig(diskDemos[slug]);
+  // 1. Check in-memory cache
+  if (memoryCache.has(slug)) {
+    return sanitizeDemoConfig(memoryCache.get(slug)!);
   }
 
-  // 2. Fallback to default preset dictionary
+  // 2. Check disk files (primary & /tmp)
+  const diskDemos = readAllDiskDemos();
+  if (diskDemos[slug]) {
+    const sanitized = sanitizeDemoConfig(diskDemos[slug]);
+    memoryCache.set(slug, sanitized);
+    return sanitized;
+  }
+
+  // 3. Fallback to default preset dictionary
   if (PRESET_DEMOS[slug]) {
     return sanitizeDemoConfig(PRESET_DEMOS[slug]);
   }
@@ -70,14 +93,17 @@ export function getServerDemoBySlug(slug: string): GymConfig | null {
 
 export function saveServerDemo(config: GymConfig): GymConfig {
   const sanitized = sanitizeDemoConfig(config);
-  const diskDemos = readDemosFromDisk();
+  memoryCache.set(sanitized.slug, sanitized);
+
+  const diskDemos = readAllDiskDemos();
   diskDemos[sanitized.slug] = sanitized;
-  writeDemosToDisk(diskDemos);
+  writeToDisk(diskDemos);
+
   return sanitized;
 }
 
 export function getAllServerDemos(): GymConfig[] {
-  const diskDemos = readDemosFromDisk();
+  const diskDemos = readAllDiskDemos();
   const result: Record<string, GymConfig> = {};
 
   // Start with preset demos
@@ -87,6 +113,11 @@ export function getAllServerDemos(): GymConfig[] {
 
   // Override / append with disk demos
   Object.entries(diskDemos).forEach(([slug, cfg]) => {
+    result[slug] = sanitizeDemoConfig(cfg);
+  });
+
+  // Override / append with active memory cache
+  Array.from(memoryCache.entries()).forEach(([slug, cfg]) => {
     result[slug] = sanitizeDemoConfig(cfg);
   });
 

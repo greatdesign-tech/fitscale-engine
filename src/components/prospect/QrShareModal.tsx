@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, QrCode, Copy, Check, ExternalLink, Smartphone } from 'lucide-react';
 import QRCode from 'qrcode';
 import { GymConfig } from '@/types';
+import { buildShareableDemoUrl } from '@/lib/demoUrlEncoder';
 
 interface QrShareModalProps {
   config: GymConfig;
@@ -23,7 +24,7 @@ export const QrShareModal: React.FC<QrShareModalProps> = ({
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const url = `${window.location.origin}/demo/${config.slug}`;
+      const url = buildShareableDemoUrl(config, window.location.origin);
       setFullUrl(url);
 
       QRCode.toDataURL(

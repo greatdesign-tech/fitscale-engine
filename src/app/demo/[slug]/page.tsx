@@ -2,69 +2,145 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
+import Link from 'next/link';
 import { PRESET_DEMOS } from '@/lib/defaultDemos';
-import { getDemoBySlug } from '@/lib/store';
+import { getDemoBySlug, saveDemo } from '@/lib/store';
+import { decodeDemoConfig } from '@/lib/demoUrlEncoder';
 import { GymConfig } from '@/types';
 import { PhoneFrame } from '@/components/phone/PhoneFrame';
 import { AgencyHeader } from '@/components/prospect/AgencyHeader';
 import { FloatingAgencyCta } from '@/components/prospect/FloatingAgencyCta';
 import { StrategyCallModal } from '@/components/prospect/StrategyCallModal';
 import { QrShareModal } from '@/components/prospect/QrShareModal';
-import { Smartphone, Sparkles, RefreshCw, Calendar, ArrowRight, Mail } from 'lucide-react';
+import { Smartphone, RefreshCw, ArrowRight, Mail, AlertCircle } from 'lucide-react';
 
 export default function DemoViewerPage() {
   const params = useParams();
   const slug = (params?.slug as string) || 'apex-fitness';
 
-  const [config, setConfig] = useState<GymConfig>(() => {
-    const cached = typeof window !== 'undefined' ? getDemoBySlug(slug) : null;
-    return cached || PRESET_DEMOS[slug] || PRESET_DEMOS['apex-fitness'];
+  const [config, setConfig] = useState<GymConfig | null>(() => {
+    if (typeof window !== 'undefined') {
+      // 1. Check if full configuration payload is embedded in URL (?c=...)
+      const urlParams = new URLSearchParams(window.location.search);
+      const payload = urlParams.get('c');
+      if (payload) {
+        const decoded = decodeDemoConfig(payload);
+        if (decoded) return decoded;
+      }
+
+      // 2. Check client-side localStorage
+      const cached = getDemoBySlug(slug);
+      if (cached) return cached;
+    }
+
+    // 3. Fallback to preset dictionary ONLY if slug matches a standard preset
+    if (PRESET_DEMOS[slug]) {
+      return PRESET_DEMOS[slug];
+    }
+
+    // Never default to apex-fitness if custom slug is specified!
+    return null;
   });
+
   const [pushTriggerKey, setPushTriggerKey] = useState(0);
   const [isQrOpen, setIsQrOpen] = useState(false);
   const [isStrategyModalOpen, setIsStrategyModalOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(!config);
+  const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
-    // 1. Instant local load
-    const found = getDemoBySlug(slug);
-    if (found) {
-      setConfig(found);
-      setIsLoading(false);
+    // 1. Check URL payload (?c=...)
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const payload = urlParams.get('c');
+      if (payload) {
+        const decoded = decodeDemoConfig(payload);
+        if (decoded) {
+          setConfig(decoded);
+          setIsLoading(false);
+          setNotFound(false);
+          // Save to this browser's local storage & sync to server API
+          saveDemo(decoded);
+          return;
+        }
+      }
     }
 
-    // 2. Always revalidate with server disk persistence
+    // 2. Check local storage
+    const local = getDemoBySlug(slug);
+    if (local) {
+      setConfig(local);
+      setIsLoading(false);
+      setNotFound(false);
+    } else if (PRESET_DEMOS[slug]) {
+      setConfig(PRESET_DEMOS[slug]);
+      setIsLoading(false);
+      setNotFound(false);
+    }
+
+    // 3. Fetch from server API
     fetch(`/api/demos/${slug}`)
       .then((res) => res.json())
       .then((data) => {
         if (data.success && data.data) {
           setConfig(data.data);
-          // Sync to client local storage
-          try {
-            const STORAGE_KEY = 'fitapp_demos_custom_v1';
-            const saved = localStorage.getItem(STORAGE_KEY);
-            let list: GymConfig[] = saved ? JSON.parse(saved) : [];
-            const idx = list.findIndex((item) => item.slug === data.data.slug);
-            if (idx >= 0) {
-              list[idx] = data.data;
-            } else {
-              list.unshift(data.data);
-            }
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
-          } catch (e) {
-            // Ignore storage sync err
-          }
+          saveDemo(data.data);
+          setIsLoading(false);
+          setNotFound(false);
+        } else if (!local && !PRESET_DEMOS[slug]) {
+          setIsLoading(false);
+          setNotFound(true);
         }
-        setIsLoading(false);
       })
       .catch(() => {
-        setIsLoading(false);
+        if (!local && !PRESET_DEMOS[slug]) {
+          setIsLoading(false);
+          setNotFound(true);
+        }
       });
   }, [slug]);
 
   const handleTriggerPush = () => {
     setPushTriggerKey((prev) => prev + 1);
   };
+
+  // Loading state (prevents flashing wrong gym preset)
+  if (isLoading || !config) {
+    if (notFound) {
+      return (
+        <div className="min-h-screen bg-slate-950 text-white flex flex-col items-center justify-center p-6 text-center max-w-md mx-auto selection:bg-emerald-500">
+          <div className="w-14 h-14 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center mb-4 shadow-lg border border-amber-500/30">
+            <AlertCircle className="w-7 h-7" />
+          </div>
+          <h2 className="text-xl font-black tracking-tight">Prototype Link Pending</h2>
+          <p className="text-xs text-slate-300 mt-2 leading-relaxed">
+            The customized prototype for <strong className="text-emerald-400 font-mono font-bold">/{slug}</strong> has not been synced to this device yet.
+          </p>
+          <p className="text-[11px] text-slate-400 mt-2">
+            If you received a proposal link, please make sure you clicked the full email link or scanned the QR code.
+          </p>
+          <div className="mt-6 flex items-center gap-3">
+            <Link
+              href="/admin/builder"
+              className="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold transition shadow-lg active:scale-98"
+            >
+              Open Demo Studio
+            </Link>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="min-h-screen bg-slate-950 text-white flex flex-col items-center justify-center p-4">
+        <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center mb-4 animate-pulse">
+          <Smartphone className="w-6 h-6" />
+        </div>
+        <h2 className="text-base font-bold text-white tracking-tight">Loading Mobile Prototype...</h2>
+        <p className="text-xs text-slate-400 font-mono mt-1">/demo/{slug}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-emerald-500 selection:text-white">

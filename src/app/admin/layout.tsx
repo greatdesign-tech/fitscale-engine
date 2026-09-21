@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { getAllLeads } from '@/lib/leadStore';
 import { getAllDemos } from '@/lib/store';
+import { buildShareableDemoUrl } from '@/lib/demoUrlEncoder';
 
 export default function AdminSidebarLayout({
   children,
@@ -28,11 +29,11 @@ export default function AdminSidebarLayout({
   const pathname = usePathname();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [leadStats, setLeadStats] = useState({ total: 9, noApp: 5, demoReady: 4 });
-  const [activeDemos, setActiveDemos] = useState<{ name: string; slug: string; city?: string }[]>([
-    { name: 'Apex Athletic Club', slug: 'apex-fitness', city: 'Austin, TX' },
-    { name: 'IronForge CrossFit', slug: 'ironforge-crossfit', city: 'Denver, CO' },
-    { name: 'Zenith Pilates', slug: 'zenith-pilates', city: 'Santa Monica, CA' },
-    { name: 'Rumble Boxing Lab', slug: 'rumble-boxing', city: 'Miami, FL' },
+  const [activeDemos, setActiveDemos] = useState<{ name: string; slug: string; city?: string; url?: string }[]>([
+    { name: 'Apex Athletic Club', slug: 'apex-fitness', city: 'Austin, TX', url: '/demo/apex-fitness' },
+    { name: 'IronForge CrossFit', slug: 'ironforge-crossfit', city: 'Denver, CO', url: '/demo/ironforge-crossfit' },
+    { name: 'Zenith Pilates', slug: 'zenith-pilates', city: 'Santa Monica, CA', url: '/demo/zenith-pilates' },
+    { name: 'Rumble Boxing Lab', slug: 'rumble-boxing', city: 'Miami, FL', url: '/demo/rumble-boxing' },
   ]);
 
   useEffect(() => {
@@ -44,7 +45,7 @@ export default function AdminSidebarLayout({
 
       const all = getAllDemos();
       if (all.length > 0) {
-        setActiveDemos(all.map((d) => ({ name: d.name, slug: d.slug, city: d.location })));
+        setActiveDemos(all.map((d) => ({ name: d.name, slug: d.slug, city: d.location, url: buildShareableDemoUrl(d) })));
       }
     } catch (e) {
       // Fallback stats
@@ -165,7 +166,7 @@ export default function AdminSidebarLayout({
             {activeDemos.slice(0, 6).map((d) => (
               <Link
                 key={d.slug}
-                href={`/demo/${d.slug}`}
+                href={d.url || `/demo/${d.slug}`}
                 target="_blank"
                 className="flex items-center justify-between px-3 py-1.5 rounded-lg text-xs text-slate-400 hover:text-white hover:bg-slate-800/40 transition group"
               >

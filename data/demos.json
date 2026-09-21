@@ -1,1 +1,33 @@
-{}
+{
+  "korrect-fitness": {
+    "name": "Korrect Fitness",
+    "slug": "korrect-fitness",
+    "location": "Austin, TX",
+    "primaryColor": "#F97316",
+    "logoMonogram": "KF",
+    "homeConfig": {
+      "greeting": "Welcome to Korrect Fitness!",
+      "memberBadge": "Gold VIP",
+      "membershipCardTitle": "Monthly Pass"
+    },
+    "scheduleConfig": {
+      "title": "Korrect Classes",
+      "subtitle": "Book your workout",
+      "categories": [
+        "All",
+        "HIIT"
+      ]
+    },
+    "trainersConfig": {
+      "title": "Korrect Coaches",
+      "subtitle": "Meet our team"
+    },
+    "rewardsConfig": {
+      "title": "Korrect Rewards",
+      "subtitle": "Earn perks"
+    },
+    "trainers": [],
+    "classes": [],
+    "rewards": []
+  }
+}

@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { PRESET_DEMOS } from '@/lib/defaultDemos';
 import { saveDemo, getDemoBySlug, getAllDemos, publishDemo } from '@/lib/store';
 import { attachDemoToLead, getLeadById } from '@/lib/leadStore';
+import { buildShareableDemoUrl } from '@/lib/demoUrlEncoder';
 import {
   GymConfig,
   Trainer,
@@ -224,7 +225,7 @@ function DemoBuilderContent() {
 
     // Attach to Lead Record if enabled
     if (attachToLead && leadId) {
-      const demoUrl = `/demo/${finalSlug}`;
+      const demoUrl = buildShareableDemoUrl(saved);
       attachDemoToLead(leadId, finalSlug, demoUrl);
 
       fetch(`/api/leads/${leadId}`, {
@@ -583,7 +584,7 @@ function DemoBuilderContent() {
 
           {/* Live Prospect View */}
           <Link
-            href={`/demo/${config.slug}`}
+            href={buildShareableDemoUrl(config)}
             target="_blank"
             className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-white/10 transition"
           >
@@ -610,7 +611,7 @@ function DemoBuilderContent() {
             <span>{publishFeedback}</span>
           </div>
           <Link
-            href={`/demo/${config.slug}`}
+            href={buildShareableDemoUrl(config)}
             target="_blank"
             className="flex items-center gap-1 text-xs text-white bg-emerald-500/20 px-3 py-1.5 rounded-xl border border-emerald-500/30 hover:bg-emerald-500/30 transition"
           >
