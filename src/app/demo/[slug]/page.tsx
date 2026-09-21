@@ -164,12 +164,12 @@ export default function DemoViewerPage() {
           </h2>
           <button
             onClick={() => setIsStrategyModalOpen(true)}
-            className="mt-3 w-full py-2.5 px-4 rounded-xl text-xs font-bold text-slate-950 flex items-center justify-center gap-1.5 shadow-lg"
+            className="mt-3 w-full py-2.5 px-3 rounded-xl text-xs font-bold text-slate-950 flex items-center justify-center gap-1.5 shadow-lg whitespace-nowrap"
             style={{ backgroundColor: config.primaryColor }}
           >
-            <Mail className="w-3.5 h-3.5" />
-            <span>Get App Proposal & Specs via Email</span>
-            <ArrowRight className="w-3.5 h-3.5" />
+            <Mail className="w-3.5 h-3.5 shrink-0" />
+            <span className="whitespace-nowrap">Get App Proposal & Specs via Email</span>
+            <ArrowRight className="w-3.5 h-3.5 shrink-0" />
           </button>
         </div>
 

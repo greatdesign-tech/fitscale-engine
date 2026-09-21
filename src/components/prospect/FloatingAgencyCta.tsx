@@ -118,12 +118,12 @@ export const FloatingAgencyCta: React.FC<FloatingAgencyCtaProps> = ({
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           onClick={onBookCall}
-          className="w-full py-4 px-5 rounded-2xl font-extrabold text-sm flex items-center justify-center gap-2 transition shadow-xl text-slate-950 hover:brightness-105"
+          className="w-full py-3.5 px-3 sm:px-4 rounded-2xl font-extrabold text-xs sm:text-[13px] flex items-center justify-center gap-1.5 transition shadow-xl text-slate-950 hover:brightness-105 whitespace-nowrap"
           style={{ backgroundColor: config.primaryColor }}
         >
-          <Mail className="w-4 h-4" />
-          <span>Get App Proposal & Specs via Email</span>
-          <ArrowRight className="w-4 h-4" />
+          <Mail className="w-4 h-4 shrink-0" />
+          <span className="whitespace-nowrap">Get App Proposal & Specs via Email</span>
+          <ArrowRight className="w-4 h-4 shrink-0" />
         </motion.button>
 
         <p className="text-[11px] text-center text-slate-400 mt-2.5 flex items-center justify-center gap-1.5">
