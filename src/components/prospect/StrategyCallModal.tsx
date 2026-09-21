@@ -136,7 +136,7 @@ export const StrategyCallModal: React.FC<StrategyCallModalProps> = ({
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider bg-emerald-500/10 px-2.5 py-0.5 rounded-full flex items-center gap-1.5 border border-emerald-500/20">
-                    <Mail className="w-3 h-3" /> Direct Email Delivery • Official App Proposal
+                    <Mail className="w-3 h-3" /> Official App Proposal & Specifications
                   </span>
                 </div>
 

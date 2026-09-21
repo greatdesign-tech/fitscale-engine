@@ -10,7 +10,6 @@ import {
   ShieldCheck,
   Mail,
   Send,
-  MessageSquare,
   CheckCheck,
 } from 'lucide-react';
 import { GymConfig } from '@/types';
@@ -112,18 +111,6 @@ export const FloatingAgencyCta: React.FC<FloatingAgencyCtaProps> = ({
               </p>
             </div>
           </div>
-
-          <div className="flex items-start gap-3 p-2.5 rounded-2xl bg-slate-800/40 border border-white/5">
-            <div className="w-7 h-7 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">
-              <MessageSquare className="w-4 h-4" />
-            </div>
-            <div>
-              <h4 className="text-xs font-bold text-white">Direct Email Delivery</h4>
-              <p className="text-[11px] text-slate-400 mt-0.5">
-                All pricing, feature specs, and onboarding steps are delivered directly to your inbox.
-              </p>
-            </div>
-          </div>
         </div>
 
         {/* Big CTA Button */}
@@ -141,7 +128,7 @@ export const FloatingAgencyCta: React.FC<FloatingAgencyCtaProps> = ({
 
         <p className="text-[11px] text-center text-slate-400 mt-2.5 flex items-center justify-center gap-1.5">
           <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-          <span>Detailed proposal, feature specs & pricing delivered to your inbox</span>
+          <span>Full development roadmap, feature specs & transparent pricing</span>
         </p>
 
         {/* Agency Rep Contact Card */}
