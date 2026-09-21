@@ -9,8 +9,6 @@ import {
   ArrowRight,
   ShieldCheck,
   Mail,
-  Send,
-  CheckCheck,
 } from 'lucide-react';
 import { GymConfig } from '@/types';
 
@@ -23,36 +21,6 @@ export const FloatingAgencyCta: React.FC<FloatingAgencyCtaProps> = ({
   config,
   onBookCall,
 }) => {
-  const repSettings = config.agencySettings || {
-    agencyName: 'FitDigital Agency',
-    calBookingUrl: '',
-    repName: 'Taiwo Adediji',
-    repTitle: 'Head of Fitness Partnerships',
-    repEmail: 'taiwo.adediji.apps@gmail.com',
-    repPhone: '+1 (512) 843-9120',
-  };
-
-  const rep = {
-    ...repSettings,
-    repName:
-      !repSettings.repName || repSettings.repName === 'Marcus Vance'
-        ? 'Taiwo Adediji'
-        : repSettings.repName,
-    repEmail:
-      !repSettings.repEmail || repSettings.repEmail === 'marcus@fitdigitalapps.io'
-        ? 'taiwo.adediji.apps@gmail.com'
-        : repSettings.repEmail,
-  };
-
-  const repInitials =
-    rep.repName === 'Marcus Vance' || !rep.repName
-      ? 'TA'
-      : rep.repName
-          .split(' ')
-          .map((n) => n[0])
-          .join('')
-          .toUpperCase();
-
   return (
     <div className="w-full lg:w-[380px] shrink-0">
       <div className="bg-slate-900/90 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl relative overflow-hidden ring-1 ring-white/5">
@@ -130,30 +98,6 @@ export const FloatingAgencyCta: React.FC<FloatingAgencyCtaProps> = ({
           <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
           <span>Full development roadmap, feature specs & transparent pricing</span>
         </p>
-
-        {/* Agency Rep Contact Card */}
-        <div className="mt-5 pt-4 border-t border-white/10 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-full bg-slate-800 border border-white/10 flex items-center justify-center font-bold text-xs text-white">
-              {repInitials}
-            </div>
-            <div>
-              <div className="text-xs font-bold text-white">{rep.repName}</div>
-              <div className="text-[10px] text-slate-400">{rep.repTitle}</div>
-            </div>
-          </div>
-
-          <a
-            href={`mailto:${rep.repEmail}?subject=App Proposal for ${encodeURIComponent(
-              config.name
-            )}`}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white text-xs font-semibold transition border border-white/5 shadow-sm"
-            title="Email rep directly"
-          >
-            <Mail className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Email Rep</span>
-          </a>
-        </div>
       </div>
     </div>
   );
