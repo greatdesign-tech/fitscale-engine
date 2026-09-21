@@ -161,7 +161,7 @@ export const PhoneFrame: React.FC<PhoneFrameProps> = ({
         />
 
         {/* c) Scrollable Body (This is the ONLY element with overflow-y-auto) */}
-        <div className="overflow-y-auto h-full pt-16 pb-20 px-4 phone-screen-scroll absolute inset-0">
+        <div className="overflow-y-auto h-full pt-16 pb-20 px-4 [&::-webkit-scrollbar]:hidden [scrollbar-width:none] [-ms-overflow-style:none] phone-screen-scroll absolute inset-0">
           <AnimatePresence mode="wait">
             {activeTab === 'home' && (
               <motion.div
