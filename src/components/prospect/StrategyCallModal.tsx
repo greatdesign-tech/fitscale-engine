@@ -23,26 +23,6 @@ export const StrategyCallModal: React.FC<StrategyCallModalProps> = ({
   isOpen,
   onClose,
 }) => {
-  const repSettings = config.agencySettings || {
-    agencyName: 'FitDigital Agency',
-    calBookingUrl: '',
-    repName: 'Taiwo Adediji',
-    repTitle: 'Head of Fitness Partnerships',
-    repEmail: 'taiwo.adediji.apps@gmail.com',
-    repPhone: '+1 (512) 843-9120',
-  };
-
-  const rep = {
-    ...repSettings,
-    repName:
-      !repSettings.repName || repSettings.repName === 'Marcus Vance'
-        ? 'Taiwo Adediji'
-        : repSettings.repName,
-    repEmail:
-      !repSettings.repEmail || repSettings.repEmail === 'marcus@fitdigitalapps.io'
-        ? 'taiwo.adediji.apps@gmail.com'
-        : repSettings.repEmail,
-  };
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
@@ -74,12 +54,6 @@ export const StrategyCallModal: React.FC<StrategyCallModalProps> = ({
     setIsSubmitted(false);
     onClose();
   };
-
-  const directMailtoUrl = `mailto:${rep.repEmail}?subject=App Proposal Inquiry for ${encodeURIComponent(
-    config.name
-  )}&body=${encodeURIComponent(
-    `Hi ${rep.repName},\n\nI just viewed the interactive app demo for ${config.name} and would like to receive pricing and feature details.\n\nName: ${name || '[My Name]'}\nGym: ${config.name} (${config.location})\n\nQuestions / Notes:\n${message || 'Please send over pricing and timeline.'}\n\nThanks!`
-  )}`;
 
   return (
     <AnimatePresence>
@@ -195,7 +169,7 @@ export const StrategyCallModal: React.FC<StrategyCallModalProps> = ({
                 </form>
               </div>
             ) : (
-              <div className="py-6 text-center space-y-4">
+              <div className="py-8 text-center space-y-5">
                 <div
                   className="w-16 h-16 rounded-full mx-auto flex items-center justify-center text-slate-950 shadow-xl"
                   style={{ backgroundColor: config.primaryColor }}
@@ -203,45 +177,20 @@ export const StrategyCallModal: React.FC<StrategyCallModalProps> = ({
                   <CheckCircle2 className="w-8 h-8" />
                 </div>
 
-                <h3 className="text-xl font-bold text-white">Inquiry Sent to Our Inbox!</h3>
-                <p className="text-xs text-slate-300 max-w-sm mx-auto leading-relaxed">
-                  We have received your request for <span className="text-white font-bold">{config.name}</span>. A detailed proposal and transparent pricing will be emailed directly to <span className="text-emerald-400 font-mono font-bold">{email || 'your email'}</span>.
+                <h3 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
+                  Proposal Request Received!
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-300 max-w-md mx-auto leading-relaxed">
+                  We have received your request for <span className="text-white font-bold">{config.name}</span>. Your customized app blueprint, feature specs, and pricing will arrive in your inbox at <span className="text-emerald-400 font-mono font-bold">{email || 'your email'}</span> within 4 hours.
                 </p>
 
-                <div className="p-3.5 bg-slate-800/60 rounded-2xl border border-white/10 text-[11px] text-slate-300 max-w-sm mx-auto text-left space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-400">Assigned Solutions Lead:</span>
-                    <span className="text-white font-bold">{rep.repName}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-400">Direct Contact Email:</span>
-                    <span className="text-emerald-400 font-mono font-bold">{rep.repEmail}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-400">Communication Mode:</span>
-                    <span className="text-white font-semibold">100% Async Email-to-Email</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-400">Turnaround Time:</span>
-                    <span className="text-white font-semibold">&lt; 4 business hours</span>
-                  </div>
-                </div>
-
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-2 pt-2">
-                  <a
-                    href={directMailtoUrl}
-                    className="w-full sm:w-auto px-5 py-2.5 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-white border border-white/10 transition flex items-center justify-center gap-1.5"
-                  >
-                    <Mail className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>Open Email Client</span>
-                  </a>
-
+                <div className="pt-3 flex justify-center">
                   <button
                     onClick={handleReset}
-                    className="w-full sm:w-auto px-6 py-2.5 rounded-xl text-xs font-bold text-slate-950"
+                    className="w-full sm:w-auto px-8 py-3.5 rounded-xl text-xs sm:text-sm font-extrabold text-slate-950 transition shadow-xl hover:brightness-105 active:scale-98 cursor-pointer"
                     style={{ backgroundColor: config.primaryColor }}
                   >
-                    Back to Demo
+                    Back to Interactive Demo
                   </button>
                 </div>
               </div>
