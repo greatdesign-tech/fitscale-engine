@@ -5,14 +5,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
   CheckCircle2,
-  Sparkles,
   ArrowRight,
-  ShieldCheck,
   User,
   Mail,
   Send,
-  MessageSquare,
-  Check,
 } from 'lucide-react';
 import { GymConfig } from '@/types';
 
@@ -21,14 +17,6 @@ interface StrategyCallModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
-
-const FEATURE_OPTIONS = [
-  'Live Class Booking & Waitlists',
-  'Lockscreen Push Reminders',
-  'Turnstile QR Digital Pass',
-  'Trainer 1-on-1 PT Bookings',
-  'Streak Tracker & Punch Card',
-];
 
 export const StrategyCallModal: React.FC<StrategyCallModalProps> = ({
   config,
@@ -57,20 +45,9 @@ export const StrategyCallModal: React.FC<StrategyCallModalProps> = ({
   };
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [currentSoftware, setCurrentSoftware] = useState('No Mobile App Currently');
-  const [selectedFeatures, setSelectedFeatures] = useState<string[]>([
-    'Live Class Booking & Waitlists',
-    'Lockscreen Push Reminders',
-  ]);
   const [message, setMessage] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-
-  const toggleFeature = (feat: string) => {
-    setSelectedFeatures((prev) =>
-      prev.includes(feat) ? prev.filter((f) => f !== feat) : [...prev, feat]
-    );
-  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,9 +59,7 @@ export const StrategyCallModal: React.FC<StrategyCallModalProps> = ({
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          notes: `[Email Inquiry] From: ${name} (${email}) | Features: ${selectedFeatures.join(
-            ', '
-          )} | Message: ${message || 'None'}`,
+          notes: `[Email Inquiry] From: ${name} (${email}) | Message: ${message || 'None'}`,
         }),
       }).catch(() => {});
     }
@@ -103,9 +78,7 @@ export const StrategyCallModal: React.FC<StrategyCallModalProps> = ({
   const directMailtoUrl = `mailto:${rep.repEmail}?subject=App Proposal Inquiry for ${encodeURIComponent(
     config.name
   )}&body=${encodeURIComponent(
-    `Hi ${rep.repName},\n\nI just viewed the interactive app demo for ${config.name} and would like to receive pricing and feature details.\n\nName: ${name || '[My Name]'}\nGym: ${config.name} (${config.location})\nCurrent Setup: ${currentSoftware}\nDesired Features: ${selectedFeatures.join(
-      ', '
-    )}\n\nQuestions / Notes:\n${message || 'Please send over pricing and timeline.'}\n\nThanks!`
+    `Hi ${rep.repName},\n\nI just viewed the interactive app demo for ${config.name} and would like to receive pricing and feature details.\n\nName: ${name || '[My Name]'}\nGym: ${config.name} (${config.location})\n\nQuestions / Notes:\n${message || 'Please send over pricing and timeline.'}\n\nThanks!`
   )}`;
 
   return (
@@ -187,58 +160,15 @@ export const StrategyCallModal: React.FC<StrategyCallModalProps> = ({
 
                   <div>
                     <label className="block text-xs font-semibold text-slate-300 mb-1">
-                      Current Member Database / Software
-                    </label>
-                    <select
-                      value={currentSoftware}
-                      onChange={(e) => setCurrentSoftware(e.target.value)}
-                      className="w-full px-3 py-2.5 rounded-xl bg-slate-800/80 border border-white/10 text-white text-xs focus:outline-none focus:border-emerald-500"
-                    >
-                      <option value="No Mobile App Currently">No Mobile App Currently</option>
-                      <option value="Mindbody / Mariana Tek">Mindbody / Mariana Tek</option>
-                      <option value="PushPress / Wodify">PushPress / Wodify</option>
-                      <option value="Zen Planner / Glofox">Zen Planner / Glofox</option>
-                      <option value="Custom / Other System">Custom / Other Database</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                      Desired Mobile Features (Select all that apply)
-                    </label>
-                    <div className="flex flex-wrap gap-1.5">
-                      {FEATURE_OPTIONS.map((feat) => {
-                        const isSelected = selectedFeatures.includes(feat);
-                        return (
-                          <button
-                            key={feat}
-                            type="button"
-                            onClick={() => toggleFeature(feat)}
-                            className={`px-2.5 py-1 rounded-xl text-[11px] font-medium transition border flex items-center gap-1 ${
-                              isSelected
-                                ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 font-bold'
-                                : 'bg-slate-800/60 text-slate-400 border-white/5 hover:border-white/20'
-                            }`}
-                          >
-                            {isSelected && <Check className="w-3 h-3" />}
-                            <span>{feat}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-300 mb-1">
                       Questions or Specific Notes (Optional)
                     </label>
                     <div className="relative">
                       <textarea
-                        rows={2}
+                        rows={3}
                         value={message}
                         onChange={(e) => setMessage(e.target.value)}
-                        placeholder="e.g., How long does App Store review take? What are the monthly costs?"
-                        className="w-full px-3 py-2 rounded-xl bg-slate-800/80 border border-white/10 text-white text-xs placeholder:text-slate-500 focus:outline-none focus:border-emerald-500"
+                        placeholder="e.g., Timeline requirements, existing system, or questions on pricing..."
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-slate-800/80 border border-white/10 text-white text-xs placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 resize-none"
                       />
                     </div>
                   </div>
