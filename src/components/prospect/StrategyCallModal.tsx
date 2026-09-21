@@ -136,7 +136,7 @@ export const StrategyCallModal: React.FC<StrategyCallModalProps> = ({
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider bg-emerald-500/10 px-2.5 py-0.5 rounded-full flex items-center gap-1.5 border border-emerald-500/20">
-                    <Mail className="w-3 h-3" /> 100% Email-to-Email • Zero Sales Calls
+                    <Mail className="w-3 h-3" /> Direct Email Delivery • Official App Proposal
                   </span>
                 </div>
 
@@ -144,7 +144,7 @@ export const StrategyCallModal: React.FC<StrategyCallModalProps> = ({
                   Get App Proposal & Pricing for {config.name}
                 </h3>
                 <p className="text-xs text-slate-300 mt-1 mb-4">
-                  Skip the phone calls and calendar scheduling. Fill out your details below and our development team will email you a complete proposal, feature spec, and transparent pricing.
+                  Fill out your details below and our development team will email you a complete proposal, feature spec, and transparent pricing within 4 hours.
                 </p>
 
                 <form onSubmit={handleSubmit} className="space-y-3.5">

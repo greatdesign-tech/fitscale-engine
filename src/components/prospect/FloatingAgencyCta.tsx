@@ -118,9 +118,9 @@ export const FloatingAgencyCta: React.FC<FloatingAgencyCtaProps> = ({
               <MessageSquare className="w-4 h-4" />
             </div>
             <div>
-              <h4 className="text-xs font-bold text-white">Zero Phone Calls Required</h4>
+              <h4 className="text-xs font-bold text-white">Direct Email Delivery</h4>
               <p className="text-[11px] text-slate-400 mt-0.5">
-                We respect your time. All pricing, feature specs, and onboarding steps are handled directly over email.
+                All pricing, feature specs, and onboarding steps are delivered directly to your inbox.
               </p>
             </div>
           </div>
@@ -141,7 +141,7 @@ export const FloatingAgencyCta: React.FC<FloatingAgencyCtaProps> = ({
 
         <p className="text-[11px] text-center text-slate-400 mt-2.5 flex items-center justify-center gap-1.5">
           <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-          <span>No phone calls • Detailed proposal & pricing in your inbox</span>
+          <span>Detailed proposal, feature specs & pricing delivered to your inbox</span>
         </p>
 
         {/* Agency Rep Contact Card */}

@@ -65,7 +65,7 @@ ${demoUrl}
 
 (You can tap through the live class schedule, 1-on-1 PT bookings, and digital loyalty punch card right in your browser or on your phone).
 
-If you'd like to review the full app specifications, rollout timeline, and pricing for ${config.name}, just reply directly to this email—no sales calls required, we coordinate everything conveniently over email.
+If you'd like to review the full app specifications, rollout timeline, and pricing for ${config.name}, just reply directly to this email and we'll deliver the full documentation package to your inbox.
 
 Best regards,
 ${config.agencySettings.repName}
@@ -114,7 +114,7 @@ ${config.agencySettings.repEmail}`;
               Share Demo with {config.name}
             </h3>
             <p className="text-xs text-slate-300 mt-1 mb-4">
-              Your custom prospect demo is live and ready for cold outreach, emails, or live sales calls.
+              Your custom prospect demo is live and ready for cold outreach, emails, and client presentations.
             </p>
 
             {/* Tab switch: Link vs Email Pitch */}
