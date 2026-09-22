@@ -591,7 +591,19 @@ export function ensureGymConfig(cfg: Partial<GymConfig> | null | undefined): Gym
       startingStreak: raw.rewardsConfig?.startingStreak ?? base.rewardsConfig?.startingStreak ?? 14,
     },
     classes: Array.isArray(raw.classes) && raw.classes.length > 0 ? raw.classes : (base.classes || []),
-    trainers: Array.isArray(raw.trainers) && raw.trainers.length > 0 ? raw.trainers : (base.trainers || []),
+    trainers: (Array.isArray(raw.trainers) && raw.trainers.length > 0 ? raw.trainers : (base.trainers || [])).map(
+      (t: any, idx: number) => ({
+        id: t?.id || `t-${idx + 1}`,
+        name: t?.name || 'Coach',
+        title: t?.title || 'Personal Trainer & Coach',
+        specialties: Array.isArray(t?.specialties) && t.specialties.length > 0 ? t.specialties : ['Strength', 'Conditioning'],
+        avatar: t?.avatar || t?.image || 'https://images.unsplash.com/photo-1567013127542-490d757e51fc?w=400&auto=format&fit=crop&q=80',
+        bio: t?.bio || 'Certified fitness trainer dedicated to personalized coaching.',
+        rate: typeof t?.rate === 'number' && !isNaN(t.rate) ? t.rate : 85,
+        rating: typeof t?.rating === 'number' && !isNaN(t.rating) ? t.rating : 4.9,
+        sessionsCompleted: typeof t?.sessionsCompleted === 'number' && !isNaN(t.sessionsCompleted) ? t.sessionsCompleted : 150,
+      })
+    ),
     rewards: Array.isArray(raw.rewards) && raw.rewards.length > 0 ? raw.rewards : (base.rewards || []),
   };
 }

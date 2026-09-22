@@ -208,7 +208,7 @@ export const PhoneFrame: React.FC<PhoneFrameProps> = ({
               >
                 <TabTrainers
                   config={config}
-                  trainers={config.trainers}
+                  trainers={config?.trainers || []}
                   onSelectTrainer={(t) => setSelectedTrainer(t)}
                 />
               </motion.div>
