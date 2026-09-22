@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 import { GymConfig } from '@/types';
 import { PRESET_DEMOS, ensureGymConfig } from './defaultDemos';
 
@@ -12,7 +13,7 @@ globalForDemos.__fitscale_demos_cache = memoryCache;
 
 const PRIMARY_DATA_DIR = path.join(process.cwd(), 'data');
 const PRIMARY_FILE = path.join(PRIMARY_DATA_DIR, 'demos.json');
-const TMP_FILE = path.join('/tmp', 'fitscale-demos.json');
+const TMP_FILE = path.join(os.tmpdir(), 'fitscale-demos.json');
 
 function sanitizeDemoConfig(cfg: GymConfig): GymConfig {
   return ensureGymConfig(cfg);

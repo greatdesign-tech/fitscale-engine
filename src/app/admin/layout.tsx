@@ -18,7 +18,7 @@ import {
   Home,
 } from 'lucide-react';
 import { getAllLeads } from '@/lib/leadStore';
-import { getAllDemos } from '@/lib/store';
+import { getAllDemos, fetchAllDemos } from '@/lib/store';
 import { buildShareableDemoUrl } from '@/lib/demoUrlEncoder';
 
 export default function AdminSidebarLayout({
@@ -50,6 +50,26 @@ export default function AdminSidebarLayout({
     } catch (e) {
       // Fallback stats
     }
+
+    // Authoritative fetch from server
+    fetch('/api/leads')
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.success && Array.isArray(d.data)) {
+          const noApp = d.data.filter((l: any) => l.appStatus !== 'demo_ready').length;
+          const demoReady = d.data.filter((l: any) => l.appStatus === 'demo_ready').length;
+          setLeadStats({ total: d.data.length, noApp, demoReady });
+        }
+      })
+      .catch(() => {});
+
+    fetchAllDemos()
+      .then((demos) => {
+        if (demos && demos.length > 0) {
+          setActiveDemos(demos.map((d) => ({ name: d.name, slug: d.slug, city: d.location, url: buildShareableDemoUrl(d) })));
+        }
+      })
+      .catch(() => {});
   }, [pathname]);
 
   const navItems = [

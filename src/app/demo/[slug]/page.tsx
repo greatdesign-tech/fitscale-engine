@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { PRESET_DEMOS, ensureGymConfig } from '@/lib/defaultDemos';
-import { getDemoBySlug, saveDemo } from '@/lib/store';
+import { getCustomLocalDemoBySlug, getDemoBySlug, saveDemo } from '@/lib/store';
 import { decodeDemoConfig } from '@/lib/demoUrlEncoder';
 import { GymConfig } from '@/types';
 import { PhoneFrame } from '@/components/phone/PhoneFrame';
@@ -35,6 +35,7 @@ export default function DemoViewerPage() {
 
   useEffect(() => {
     setMounted(true);
+    let isCancelled = false;
 
     // 1. Check URL payload (?c=...)
     try {
@@ -58,32 +59,23 @@ export default function DemoViewerPage() {
       console.warn('Could not decode URL payload', err);
     }
 
-    // 2. Check local storage
-    try {
-      const local = getDemoBySlug(slug);
-      if (local) {
-        const safe = ensureGymConfig(local);
-        setConfig(safe);
-        setIsLoading(false);
-        setNotFound(false);
-        return;
-      }
-    } catch (err) {
-      console.warn('Could not read demo from local storage', err);
-    }
-
-    // 3. Fallback to preset dictionary if slug matches
-    if (PRESET_DEMOS[slug]) {
+    // 2. Immediate local cache preview (prevents layout jump while fetching)
+    const localCustom = getCustomLocalDemoBySlug(slug);
+    if (localCustom) {
+      setConfig(ensureGymConfig(localCustom));
+      setIsLoading(false);
+      setNotFound(false);
+    } else if (PRESET_DEMOS[slug]) {
       setConfig(ensureGymConfig(PRESET_DEMOS[slug]));
       setIsLoading(false);
       setNotFound(false);
-      return;
     }
 
-    // 4. Fetch from server API
-    fetch(`/api/demos/${slug}`)
+    // 3. Always fetch authoritative published version from server API
+    fetch(`/api/demos/${slug}`, { cache: 'no-store' })
       .then((res) => res.json())
       .then((data) => {
+        if (isCancelled) return;
         if (data.success && data.data) {
           const safe = ensureGymConfig(data.data);
           setConfig(safe);
@@ -91,14 +83,41 @@ export default function DemoViewerPage() {
           setIsLoading(false);
           setNotFound(false);
         } else {
+          // Server returned false or 404
+          if (localCustom) {
+            setConfig(ensureGymConfig(localCustom));
+            setIsLoading(false);
+            setNotFound(false);
+          } else if (PRESET_DEMOS[slug]) {
+            setConfig(ensureGymConfig(PRESET_DEMOS[slug]));
+            setIsLoading(false);
+            setNotFound(false);
+          } else {
+            setIsLoading(false);
+            setNotFound(true);
+          }
+        }
+      })
+      .catch((err) => {
+        if (isCancelled) return;
+        console.warn(`Could not reach server for demo /${slug}, using offline fallback:`, err);
+        if (localCustom) {
+          setConfig(ensureGymConfig(localCustom));
+          setIsLoading(false);
+          setNotFound(false);
+        } else if (PRESET_DEMOS[slug]) {
+          setConfig(ensureGymConfig(PRESET_DEMOS[slug]));
+          setIsLoading(false);
+          setNotFound(false);
+        } else {
           setIsLoading(false);
           setNotFound(true);
         }
-      })
-      .catch(() => {
-        setIsLoading(false);
-        setNotFound(true);
       });
+
+    return () => {
+      isCancelled = true;
+    };
   }, [slug]);
 
   const handleTriggerPush = () => {

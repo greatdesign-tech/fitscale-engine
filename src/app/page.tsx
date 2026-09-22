@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import { PRESET_DEMOS } from '@/lib/defaultDemos';
+import { getAllServerDemos } from '@/lib/serverStore';
 import {
   Sparkles,
   Smartphone,
@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 
 export default function HomePage() {
-  const presets = Object.values(PRESET_DEMOS);
+  const demos = getAllServerDemos();
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-emerald-500 selection:text-white">
@@ -188,7 +188,7 @@ export default function HomePage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-          {presets.map((gym) => (
+          {demos.map((gym) => (
             <div
               key={gym.slug}
               className="rounded-3xl bg-slate-900/80 border border-white/10 p-5 flex flex-col justify-between hover:border-white/20 transition shadow-lg group relative overflow-hidden"

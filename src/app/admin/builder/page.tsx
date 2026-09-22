@@ -4,7 +4,15 @@ import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { PRESET_DEMOS } from '@/lib/defaultDemos';
-import { saveDemo, getDemoBySlug, getAllDemos, publishDemo } from '@/lib/store';
+import {
+  saveDemo,
+  getDemoBySlug,
+  getAllDemos,
+  publishDemo,
+  fetchDemoBySlug,
+  fetchAllDemos,
+  getCustomLocalDemoBySlug,
+} from '@/lib/store';
 import { attachDemoToLead, getLeadById } from '@/lib/leadStore';
 import { buildShareableDemoUrl } from '@/lib/demoUrlEncoder';
 import {
@@ -138,35 +146,50 @@ function DemoBuilderContent() {
   const [publishFeedback, setPublishFeedback] = useState<string | null>(null);
   const [availableDemos, setAvailableDemos] = useState<GymConfig[]>([]);
 
-  // Load all available demos on mount
+  // Load all available demos from server on mount
   useEffect(() => {
-    try {
-      const all = getAllDemos();
-      setAvailableDemos(all);
-    } catch (e) {
-      // Ignore
-    }
+    fetchAllDemos()
+      .then((all) => {
+        if (all && all.length > 0) {
+          setAvailableDemos(all);
+        }
+      })
+      .catch(() => {
+        setAvailableDemos(getAllDemos());
+      });
   }, []);
 
   // Auto-fill from Lead Query Parameters (⚡ Create Demo App) or editSlug
   useEffect(() => {
+    let isCancelled = false;
+
     if (leadId) {
       setAttachToLead(true);
-      const lead = getLeadById(leadId);
-      if (lead) {
-        setAttachedLead(lead);
+      const localLead = getLeadById(leadId);
+      if (localLead) {
+        setAttachedLead(localLead);
       }
 
+      fetch(`/api/leads/${leadId}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (!isCancelled && data.success && data.data) {
+            setAttachedLead(data.data);
+          }
+        })
+        .catch(() => {});
+
       // Check if this lead already has a custom demo saved
-      const targetSlug = editSlug || (lead && lead.demoSlug);
+      const targetSlug = editSlug || (localLead && localLead.demoSlug);
       if (targetSlug) {
-        const existing = getDemoBySlug(targetSlug);
-        if (existing) {
-          setConfig(ensureConfigs(existing));
-          setActivePresetKey(targetSlug);
-          setIsDirty(false);
-          return;
-        }
+        fetchDemoBySlug(targetSlug).then((existing) => {
+          if (!isCancelled && existing) {
+            setConfig(ensureConfigs(existing));
+            setActivePresetKey(targetSlug);
+            setIsDirty(false);
+          }
+        });
+        return;
       }
 
       if (paramName) {
@@ -186,6 +209,7 @@ function DemoBuilderContent() {
         setConfig((prev) =>
           ensureConfigs({
             ...prev,
+            id: `demo-${cleanSlug || 'custom'}`,
             name: paramName,
             slug: cleanSlug || 'custom-gym-demo',
             location: paramCity || prev.location,
@@ -197,13 +221,25 @@ function DemoBuilderContent() {
         setIsDirty(true);
       }
     } else if (editSlug) {
-      const existing = getDemoBySlug(editSlug);
-      if (existing) {
-        setConfig(ensureConfigs(existing));
-        setActivePresetKey(editSlug);
-        setIsDirty(false);
-      }
+      fetchDemoBySlug(editSlug).then((existing) => {
+        if (!isCancelled && existing) {
+          setConfig(ensureConfigs(existing));
+          setActivePresetKey(editSlug);
+          setIsDirty(false);
+        }
+      });
+    } else {
+      // Default load: Check if default 'apex-fitness' has an authoritative published version on server
+      fetchDemoBySlug('apex-fitness').then((existing) => {
+        if (!isCancelled && existing) {
+          setConfig(ensureConfigs(existing));
+        }
+      });
     }
+
+    return () => {
+      isCancelled = true;
+    };
   }, [leadId, paramName, paramCity, editSlug]);
 
   // Publish Changes action: saves to localStorage, server disk (data/demos.json), and lead record
@@ -238,11 +274,12 @@ function DemoBuilderContent() {
       setTimeout(() => setJustAttachedSuccess(false), 3000);
     }
 
-    // Refresh demo lists
+    // Refresh demo lists from server
     try {
-      setAvailableDemos(getAllDemos());
+      const refreshed = await fetchAllDemos();
+      setAvailableDemos(refreshed);
     } catch (e) {
-      // Ignore
+      setAvailableDemos(getAllDemos());
     }
 
     setIsDirty(false);
@@ -252,13 +289,21 @@ function DemoBuilderContent() {
   };
 
   // Switch between existing gym demos
-  const handleSwitchApp = (selectedSlug: string) => {
-    const target = getDemoBySlug(selectedSlug);
-    if (target) {
-      setConfig(ensureConfigs(target));
+  const handleSwitchApp = async (selectedSlug: string) => {
+    // 1. Immediate local preview
+    const local = getDemoBySlug(selectedSlug);
+    if (local) {
+      setConfig(ensureConfigs(local));
       setActivePresetKey(selectedSlug);
       setIsDirty(false);
       setPublishFeedback(null);
+    }
+    // 2. Authoritative server load
+    const serverDemo = await fetchDemoBySlug(selectedSlug);
+    if (serverDemo) {
+      setConfig(ensureConfigs(serverDemo));
+      setActivePresetKey(selectedSlug);
+      setIsDirty(false);
     }
   };
 
@@ -269,6 +314,7 @@ function DemoBuilderContent() {
     const base = ensureConfigs(PRESET_DEMOS['apex-fitness']);
     const fresh: GymConfig = {
       ...base,
+      id: `demo-${newSlug}`,
       name: 'Custom Gym Prototype',
       slug: newSlug,
       location: 'Austin, TX',
@@ -285,11 +331,22 @@ function DemoBuilderContent() {
   const handleLoadPreset = (key: string) => {
     if (PRESET_DEMOS[key]) {
       const preset = ensureConfigs(PRESET_DEMOS[key]);
+      const isCustomName =
+        config.name &&
+        !Object.values(PRESET_DEMOS).some((p) => p.name === config.name) &&
+        config.name !== 'Custom Gym Prototype';
+
       setConfig((prev) => ({
         ...preset,
-        name: leadId && paramName ? paramName : preset.name,
-        slug: leadId && paramName ? prev.slug : preset.slug,
-        location: leadId && paramCity ? paramCity : preset.location,
+        name: isCustomName ? prev.name : leadId && paramName ? paramName : preset.name,
+        slug: isCustomName ? prev.slug : leadId && paramName ? prev.slug : preset.slug,
+        location:
+          prev.location && prev.location !== 'Austin, TX (Downtown)'
+            ? prev.location
+            : leadId && paramCity
+            ? paramCity
+            : preset.location,
+        logoMonogram: isCustomName ? prev.logoMonogram : preset.logoMonogram,
         attachedLeadId: leadId || prev.attachedLeadId,
       }));
       setActivePresetKey(key);

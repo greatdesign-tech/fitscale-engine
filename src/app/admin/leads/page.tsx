@@ -46,7 +46,23 @@ export default function LeadFinderPage() {
   const [newStudioType, setNewStudioType] = useState<GymLead['studioType']>('Athletic Club');
 
   useEffect(() => {
+    // 1. Initial local render
     setLeads(getAllLeads());
+
+    // 2. Authoritative server sync
+    fetch('/api/leads')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.data)) {
+          setLeads(data.data);
+          if (typeof window !== 'undefined') {
+            try {
+              localStorage.setItem('fitscale_leads_v1', JSON.stringify(data.data));
+            } catch (e) {}
+          }
+        }
+      })
+      .catch((err) => console.warn('Could not fetch leads from server:', err));
   }, []);
 
   // Filter logic
@@ -100,7 +116,7 @@ export default function LeadFinderPage() {
   };
 
   // Add new lead
-  const handleAddLead = (e: React.FormEvent) => {
+  const handleAddLead = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newGymName || !newEmail) return;
 
@@ -121,6 +137,17 @@ export default function LeadFinderPage() {
     saveLead(newLead);
     setLeads(getAllLeads());
     setIsAddModalOpen(false);
+
+    // Persist to server disk
+    try {
+      await fetch('/api/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newLead),
+      });
+    } catch (err) {
+      console.error('Error saving lead to server:', err);
+    }
 
     // Reset form
     setNewGymName('');

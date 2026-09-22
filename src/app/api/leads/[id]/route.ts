@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getLeadById, saveLead, attachDemoToLead } from '@/lib/leadStore';
+import { getServerLeadById, saveServerLead, attachServerDemoToLead } from '@/lib/serverLeadStore';
 
 export async function GET(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const lead = getLeadById(params.id);
+    const lead = getServerLeadById(params.id);
     if (!lead) {
       return NextResponse.json(
         { success: false, error: 'Lead not found' },
@@ -32,16 +32,16 @@ export async function PATCH(
 
     let updated;
     if (demoSlug && demoUrl) {
-      updated = attachDemoToLead(params.id, demoSlug, demoUrl);
+      updated = attachServerDemoToLead(params.id, demoSlug, demoUrl);
     } else {
-      const existing = getLeadById(params.id);
+      const existing = getServerLeadById(params.id);
       if (!existing) {
         return NextResponse.json(
           { success: false, error: 'Lead not found' },
           { status: 404 }
         );
       }
-      updated = saveLead({ ...existing, ...otherFields });
+      updated = saveServerLead({ ...existing, ...otherFields });
     }
 
     if (!updated) {
