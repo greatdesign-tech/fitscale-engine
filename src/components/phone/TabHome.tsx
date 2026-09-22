@@ -60,8 +60,8 @@ export const TabHome: React.FC<TabHomeProps> = ({
           >
             {config.homeConfig?.memberBadge || 'VIP Member'}
           </span>
-          <span className="text-[10px] text-slate-400 mt-0.5 font-mono">
-            {config.industryType}
+          <span className="text-xs text-slate-400 font-medium text-right mt-0.5">
+            {config.name}
           </span>
         </div>
       </div>
