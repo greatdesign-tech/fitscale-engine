@@ -33,51 +33,29 @@ export const StrategyCallModal: React.FC<StrategyCallModalProps> = ({
     e.preventDefault();
     setIsLoading(true);
 
+    const userNotes = message && message.trim() ? message.trim() : 'None provided';
+
     const payload = {
-      name,
-      email,
-      notes: message || 'None',
+      name: name.trim(),
+      email: email.trim(),
+      notes: userNotes,
       gymName: config.name,
-      location: config.location,
       attachedLeadId: config.attachedLeadId,
-      'Prospect Name & Role': name,
-      'Work Email': email,
-      'Gym Name': config.name,
-      'Questions or Notes': message || 'None',
-      _subject: `✦ New Proposal Inquiry: ${config.name} (${name})`,
-      _replyto: email,
-      _captcha: 'false',
-      _template: 'table',
     };
 
     try {
-      // 1. Direct browser form action dispatch to FormSubmit for instant email delivery to taiwo.adediji.apps@gmail.com
-      const directActionPromise = fetch(
-        'https://formsubmit.co/ajax/taiwo.adediji.apps@gmail.com',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          },
-          body: JSON.stringify(payload),
-        }
-      ).catch((err) => {
-        console.warn('Direct form action service notice:', err);
-      });
-
-      // 2. Dispatch to server route (/api/proposals) for lead tracking and server forwarding
-      const serverRoutePromise = fetch('/api/proposals', {
+      const res = await fetch('/api/proposals', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
-      }).catch((err) => {
-        console.warn('Server proposal route notice:', err);
       });
 
-      await Promise.allSettled([directActionPromise, serverRoutePromise]);
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        console.warn('Proposal submission status:', res.status, data);
+      }
     } catch (err) {
-      console.warn('Proposal submission notice:', err);
+      console.warn('Proposal submission network notice:', err);
     } finally {
       setIsLoading(false);
       setIsSubmitted(true);
