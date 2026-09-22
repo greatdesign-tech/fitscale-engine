@@ -120,7 +120,7 @@ Reply directly to: ${email}
           service: 'gmail',
           auth: {
             user: smtpUser,
-            pass: smtpPass,
+            pass: smtpPass.replace(/\s+/g, ''),
           },
         });
 
