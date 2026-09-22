@@ -141,6 +141,39 @@ Reply directly to: ${email}
       }
     }
 
+    // Strategy C: Web3Forms (Free instant access key from web3forms.com)
+    const web3Key = process.env.WEB3FORMS_ACCESS_KEY;
+    if (!emailSent && web3Key) {
+      try {
+        const web3Res = await fetch('https://api.web3forms.com/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({
+            access_key: web3Key,
+            subject: `✦ New Proposal Request: ${cleanGym} - ${name}`,
+            from_name: 'FitScale Proposals',
+            'Gym Name': cleanGym,
+            'Your Name & Role': name,
+            'Work Email Address': email,
+            'Questions or Specific Notes (Optional)': cleanNotes,
+            replyto: email,
+          }),
+        });
+
+        const web3Data = await web3Res.json().catch(() => null);
+        if (web3Res.ok && web3Data?.success) {
+          emailSent = true;
+          console.log(`[Web3Forms] Successfully sent proposal email for ${cleanGym} to ${TO_EMAIL}`);
+        } else {
+          sendError = web3Data?.message || 'Web3Forms dispatch error';
+          console.error('[Web3Forms Error]', web3Data);
+        }
+      } catch (web3Err: any) {
+        sendError = web3Err?.message || 'Web3Forms exception';
+        console.error('[Web3Forms Exception]', web3Err);
+      }
+    }
+
     // Log proposal record to server output
     console.log(`[Proposal Inquiry Recorded] Gym: "${cleanGym}" | Name: "${name}" | Email: "${email}" | Notes: "${cleanNotes}" | Delivered: ${emailSent}`);
 
